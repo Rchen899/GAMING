@@ -1,450 +1,1277 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GameZone 🎮</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{
-    font-family:Arial,Helvetica,sans-serif;
-    background:#080812;
-    color:white;
-    min-height:100vh;
-}
-header{
-    background:linear-gradient(90deg,#11112b,#19194a);
-    border-bottom:1px solid #29295c;
-    padding:20px 6%;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    position:sticky;
-    top:0;
-    z-index:10;
-}
-.logo{
-    font-size:28px;
-    font-weight:900;
-    color:#8b5cf6;
-}
-.logo span{color:#22d3ee}
-nav button,.filter{
-    background:#18182e;
-    color:white;
-    border:1px solid #33335c;
-    padding:10px 15px;
-    border-radius:10px;
-    cursor:pointer;
-    margin-left:6px;
-}
-nav button:hover,.filter:hover{background:#28284b}
+    <title>GameZone | Free Browser Games</title>
 
-.hero{
-    text-align:center;
-    padding:70px 20px;
-    background:
-      radial-gradient(circle at 50% 0%,#342080 0%,transparent 45%),
-      #080812;
-}
-.hero h1{font-size:clamp(42px,8vw,80px)}
-.hero h1 span{color:#22d3ee}
-.hero p{color:#aaa;margin:15px;font-size:18px}
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, Helvetica, sans-serif;
+        }
 
-.search{
-    width:min(600px,90%);
-    padding:15px 20px;
-    border-radius:30px;
-    border:1px solid #393966;
-    background:#111122;
-    color:white;
-    outline:none;
-    font-size:16px;
-}
+        html {
+            scroll-behavior: smooth;
+        }
 
-.filters{
-    text-align:center;
-    padding:10px 20px 30px;
-}
+        body {
+            background: #080b14;
+            color: white;
+        }
 
-.games{
-    width:min(1200px,92%);
-    margin:auto;
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
-    gap:18px;
-    padding-bottom:60px;
-}
+        /* =========================
+           NAVBAR
+        ========================= */
 
-.card{
-    background:linear-gradient(145deg,#15152b,#0f0f1e);
-    border:1px solid #292950;
-    border-radius:18px;
-    padding:22px;
-    cursor:pointer;
-    transition:.2s;
-}
-.card:hover{
-    transform:translateY(-6px);
-    border-color:#8b5cf6;
-    box-shadow:0 10px 30px #6d28d933;
-}
-.icon{font-size:48px;margin-bottom:15px}
-.card h2{font-size:20px}
-.card p{color:#999;margin:8px 0 15px}
-.play{
-    background:#7c3aed;
-    color:white;
-    border:0;
-    padding:10px 17px;
-    border-radius:9px;
-    cursor:pointer;
-}
-.play:hover{background:#8b5cf6}
+        nav {
+            height: 70px;
+            width: 100%;
+            background: #101522;
+            border-bottom: 1px solid #252d40;
 
-.modal{
-    display:none;
-    position:fixed;
-    inset:0;
-    background:#000c;
-    z-index:20;
-    align-items:center;
-    justify-content:center;
-    padding:20px;
-}
-.modal.open{display:flex}
-.box{
-    width:min(700px,100%);
-    max-height:90vh;
-    overflow:auto;
-    background:#10101f;
-    border:1px solid #383866;
-    border-radius:20px;
-    padding:25px;
-    text-align:center;
-}
-.close{
-    float:right;
-    background:#25253b;
-    color:white;
-    border:0;
-    border-radius:8px;
-    padding:8px 12px;
-    cursor:pointer;
-}
-#gameArea{
-    clear:both;
-    padding-top:25px;
-}
-canvas{
-    background:#050509;
-    border:2px solid #34345c;
-    border-radius:10px;
-    max-width:100%;
-}
-.gameBtn{
-    padding:12px 20px;
-    background:#7c3aed;
-    color:white;
-    border:0;
-    border-radius:9px;
-    margin:6px;
-    cursor:pointer;
-}
-.score{
-    color:#22d3ee;
-    font-size:20px;
-    margin:12px;
-}
-.big{
-    font-size:55px;
-    margin:20px;
-}
-.grid2048{
-    display:grid;
-    grid-template-columns:repeat(4,70px);
-    gap:7px;
-    justify-content:center;
-    background:#555;
-    padding:7px;
-    width:max-content;
-    margin:auto;
-}
-.tile{
-    width:70px;height:70px;
-    background:#222;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:24px;
-    font-weight:bold;
-    border-radius:5px;
-}
-.memory{
-    display:grid;
-    grid-template-columns:repeat(4,70px);
-    gap:8px;
-    justify-content:center;
-}
-.mem{
-    width:70px;height:70px;
-    background:#29294a;
-    border-radius:10px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:30px;
-    cursor:pointer;
-}
-footer{
-    text-align:center;
-    color:#666;
-    padding:30px;
-    border-top:1px solid #22223b;
-}
-</style>
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 6%;
+
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 25px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            color: #00e5ff;
+        }
+
+        .logo span {
+            color: #a855f7;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 28px;
+        }
+
+        .nav-links a {
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 15px;
+            transition: 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #00e5ff;
+        }
+
+        /* =========================
+           HERO
+        ========================= */
+
+        .hero {
+            min-height: 480px;
+
+            display: flex;
+            align-items: center;
+
+            padding: 70px 7%;
+
+            background:
+                radial-gradient(
+                    circle at 80% 30%,
+                    rgba(168, 85, 247, 0.28),
+                    transparent 35%
+                ),
+                radial-gradient(
+                    circle at 15% 70%,
+                    rgba(0, 229, 255, 0.16),
+                    transparent 30%
+                );
+        }
+
+        .hero-content {
+            max-width: 700px;
+        }
+
+        .hero h1 {
+            font-size: clamp(45px, 7vw, 80px);
+            line-height: 0.95;
+            margin-bottom: 25px;
+        }
+
+        .hero h1 span {
+            color: #00e5ff;
+        }
+
+        .hero p {
+            color: #9ca3af;
+            font-size: 18px;
+            line-height: 1.7;
+            margin-bottom: 30px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .hero-button {
+            text-decoration: none;
+            padding: 14px 24px;
+            border-radius: 9px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .primary {
+            background: #00e5ff;
+            color: #061018;
+        }
+
+        .primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 229, 255, 0.25);
+        }
+
+        .secondary {
+            border: 1px solid #374151;
+            color: white;
+        }
+
+        .secondary:hover {
+            border-color: #a855f7;
+            color: #a855f7;
+        }
+
+        /* =========================
+           SEARCH
+        ========================= */
+
+        .search-container {
+            padding: 30px 7% 10px;
+        }
+
+        #search {
+            width: 100%;
+            padding: 16px 20px;
+
+            background: #111827;
+            border: 1px solid #293449;
+            border-radius: 10px;
+
+            color: white;
+            font-size: 16px;
+            outline: none;
+        }
+
+        #search:focus {
+            border-color: #00e5ff;
+        }
+
+        /* =========================
+           SECTIONS
+        ========================= */
+
+        .section {
+            padding: 45px 7%;
+        }
+
+        .section-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            margin-bottom: 25px;
+        }
+
+        .section-heading h2 {
+            font-size: 30px;
+        }
+
+        .section-heading span {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        /* =========================
+           GAME GRID
+        ========================= */
+
+        .game-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(auto-fill, minmax(220px, 1fr));
+
+            gap: 22px;
+        }
+
+        .game-card {
+            background: #111827;
+            border: 1px solid #222d40;
+
+            border-radius: 14px;
+            overflow: hidden;
+
+            transition: 0.25s;
+        }
+
+        .game-card:hover {
+            transform: translateY(-6px);
+            border-color: #00e5ff;
+
+            box-shadow:
+                0 15px 40px rgba(0, 0, 0, 0.35);
+        }
+
+        .game-icon {
+            height: 145px;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            font-size: 60px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #172554,
+                    #312e81
+                );
+        }
+
+        .game-card:nth-child(2) .game-icon {
+            background: linear-gradient(135deg, #064e3b, #164e63);
+        }
+
+        .game-card:nth-child(3) .game-icon {
+            background: linear-gradient(135deg, #7f1d1d, #581c87);
+        }
+
+        .game-card:nth-child(4) .game-icon {
+            background: linear-gradient(135deg, #713f12, #7c2d12);
+        }
+
+        .game-card:nth-child(5) .game-icon {
+            background: linear-gradient(135deg, #164e63, #1e1b4b);
+        }
+
+        .game-card:nth-child(6) .game-icon {
+            background: linear-gradient(135deg, #3f6212, #14532d);
+        }
+
+        .game-card:nth-child(7) .game-icon {
+            background: linear-gradient(135deg, #4c1d95, #831843);
+        }
+
+        .game-card:nth-child(8) .game-icon {
+            background: linear-gradient(135deg, #1e3a8a, #164e63);
+        }
+
+        .game-card:nth-child(9) .game-icon {
+            background: linear-gradient(135deg, #7c2d12, #991b1b);
+        }
+
+        .game-card:nth-child(10) .game-icon {
+            background: linear-gradient(135deg, #365314, #3f6212);
+        }
+
+        .game-card:nth-child(11) .game-icon {
+            background: linear-gradient(135deg, #172554, #1e1b4b);
+        }
+
+        .game-card:nth-child(12) .game-icon {
+            background: linear-gradient(135deg, #831843, #9f1239);
+        }
+
+        .game-card:nth-child(13) .game-icon {
+            background: linear-gradient(135deg, #713f12, #854d0e);
+        }
+
+        .game-card:nth-child(14) .game-icon {
+            background: linear-gradient(135deg, #064e3b, #065f46);
+        }
+
+        .game-card:nth-child(15) .game-icon {
+            background: linear-gradient(135deg, #312e81, #4c1d95);
+        }
+
+        .game-card:nth-child(16) .game-icon {
+            background: linear-gradient(135deg, #334155, #1e293b);
+        }
+
+        .game-card:nth-child(17) .game-icon {
+            background: linear-gradient(135deg, #0f766e, #155e75);
+        }
+
+        .game-card:nth-child(18) .game-icon {
+            background: linear-gradient(135deg, #581c87, #701a75);
+        }
+
+        .game-card:nth-child(19) .game-icon {
+            background: linear-gradient(135deg, #164e63, #155e75);
+        }
+
+        .game-card:nth-child(20) .game-icon {
+            background: linear-gradient(135deg, #1e3a8a, #3730a3);
+        }
+
+        .game-info {
+            padding: 17px;
+        }
+
+        .game-info h3 {
+            margin-bottom: 7px;
+        }
+
+        .game-info p {
+            color: #9ca3af;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+
+        .game-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .rating {
+            color: #facc15;
+            font-size: 13px;
+        }
+
+        .play {
+            border: none;
+            background: #00e5ff;
+            color: #061018;
+
+            padding: 8px 15px;
+            border-radius: 7px;
+
+            font-weight: bold;
+            cursor: pointer;
+
+            text-decoration: none;
+        }
+
+        .play:hover {
+            background: #67f3ff;
+        }
+
+        /* =========================
+           FOOTER
+        ========================= */
+
+        footer {
+            margin-top: 50px;
+            padding: 40px 7%;
+
+            background: #0d111a;
+            border-top: 1px solid #20283a;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        footer p {
+            color: #64748b;
+        }
+
+        footer strong {
+            color: #00e5ff;
+        }
+
+        /* =========================
+           MOBILE
+        ========================= */
+
+        @media (max-width: 700px) {
+
+            .nav-links {
+                display: none;
+            }
+
+            .hero {
+                padding: 60px 6%;
+            }
+
+            .section,
+            .search-container {
+                padding-left: 6%;
+                padding-right: 6%;
+            }
+
+            .game-grid {
+                grid-template-columns:
+                    repeat(2, minmax(0, 1fr));
+            }
+
+            .game-icon {
+                height: 120px;
+                font-size: 45px;
+            }
+
+            .game-info {
+                padding: 12px;
+            }
+
+            .game-info h3 {
+                font-size: 15px;
+            }
+        }
+
+        @media (max-width: 450px) {
+            .game-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-<header>
-    <div class="logo">GAME<span>ZONE</span> 🎮</div>
+    <!-- =========================
+         NAVIGATION
+    ========================== -->
+
     <nav>
-        <button onclick="scrollTo({top:0,behavior:'smooth'})">Home</button>
-        <button onclick="randomGame()">🎲 Random</button>
+        <div class="logo">
+            GAME<span>ZONE</span>
+        </div>
+
+        <div class="nav-links">
+            <a href="#">Home</a>
+            <a href="#games">Games</a>
+            <a href="#popular">Popular</a>
+        </div>
     </nav>
-</header>
 
-<section class="hero">
-    <h1>PLAY <span>EVERYTHING.</span></h1>
-    <p>15 free browser games. No downloads. No accounts.</p>
-    <input id="search" class="search" placeholder="🔎 Search games..." oninput="searchGames()">
-</section>
 
-<div class="filters">
-    <button class="filter" onclick="filterGames('all')">All</button>
-    <button class="filter" onclick="filterGames('arcade')">🕹️ Arcade</button>
-    <button class="filter" onclick="filterGames('puzzle')">🧩 Puzzle</button>
-    <button class="filter" onclick="filterGames('casual')">🎯 Casual</button>
-</div>
+    <!-- =========================
+         HERO
+    ========================== -->
 
-<main class="games" id="games"></main>
+    <section class="hero">
 
-<footer>GAMEZONE © 2026 • Built for GitHub Pages</footer>
+        <div class="hero-content">
 
-<div class="modal" id="modal">
-    <div class="box">
-        <button class="close" onclick="closeGame()">✕</button>
-        <h1 id="gameTitle"></h1>
-        <div id="gameArea"></div>
+            <h1>
+                PLAY.<br>
+                <span>HAVE FUN.</span>
+            </h1>
+
+            <p>
+                Welcome to GameZone — a collection of fun,
+                fast and completely browser-based games.
+                Pick a game and start playing!
+            </p>
+
+            <div class="hero-buttons">
+
+                <a href="#games" class="hero-button primary">
+                    🎮 Browse Games
+                </a>
+
+                <a href="#popular" class="hero-button secondary">
+                    🔥 Popular Games
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         SEARCH
+    ========================== -->
+
+    <div class="search-container">
+
+        <input
+            type="text"
+            id="search"
+            placeholder="🔍 Search games..."
+            onkeyup="searchGames()"
+        >
+
     </div>
-</div>
 
-<script>
-const games=[
- {name:"Snake",icon:"🐍",cat:"arcade",desc:"Eat food and grow!",fn:snake},
- {name:"Tic Tac Toe",icon:"❌",cat:"puzzle",desc:"Beat the computer!",fn:tictactoe},
- {name:"Reaction Test",icon:"⚡",cat:"casual",desc:"How fast are you?",fn:reaction},
- {name:"Clicker",icon:"👆",cat:"casual",desc:"Click as fast as possible!",fn:clicker},
- {name:"Guess Number",icon:"🔢",cat:"puzzle",desc:"Guess the hidden number.",fn:guess},
- {name:"Rock Paper Scissors",icon:"✊",cat:"casual",desc:"Challenge the computer.",fn:rps},
- {name:"Memory Match",icon:"🧠",cat:"puzzle",desc:"Match all the cards.",fn:memory},
- {name:"2048",icon:"🟨",cat:"puzzle",desc:"Reach 2048!",fn:game2048},
- {name:"Pong",icon:"🏓",cat:"arcade",desc:"Classic paddle battle.",fn:pong},
- {name:"Breakout",icon:"🧱",cat:"arcade",desc:"Destroy every block.",fn:breakout},
- {name:"Dodge",icon:"💥",cat:"arcade",desc:"Avoid the falling blocks.",fn:dodge},
- {name:"Flappy",icon:"🐦",cat:"arcade",desc:"Fly through the pipes.",fn:flappy},
- {name:"Math Rush",icon:"➕",cat:"puzzle",desc:"Solve equations quickly.",fn:math},
- {name:"Color Test",icon:"🎨",cat:"casual",desc:"Find the different color.",fn:color},
- {name:"Coin Catcher",icon:"🪙",cat:"casual",desc:"Catch as many coins as possible.",fn:coin}
-];
 
-function render(list=games){
- const el=document.getElementById("games");
- el.innerHTML=list.map((g,i)=>`
- <div class="card" data-name="${g.name.toLowerCase()}">
-   <div class="icon">${g.icon}</div>
-   <h2>${g.name}</h2>
-   <p>${g.desc}</p>
-   <button class="play" onclick="openGame(${i})">PLAY →</button>
- </div>`).join("");
-}
-render();
+    <!-- =========================
+         GAMES
+    ========================== -->
 
-function openGame(i){
- document.getElementById("modal").classList.add("open");
- document.getElementById("gameTitle").textContent=games[i].icon+" "+games[i].name;
- document.getElementById("gameArea").innerHTML="";
- games[i].fn();
-}
-function closeGame(){
- document.getElementById("modal").classList.remove("open");
- document.getElementById("gameArea").innerHTML="";
-}
-function searchGames(){
- let q=document.getElementById("search").value.toLowerCase();
- render(games.filter(g=>g.name.toLowerCase().includes(q)));
-}
-function filterGames(c){
- render(c==="all"?games:games.filter(g=>g.cat===c));
-}
-function randomGame(){
- openGame(Math.floor(Math.random()*games.length));
-}
+    <section class="section" id="games">
 
-/* SNAKE */
-function snake(){
- const a=document.getElementById("gameArea");
- a.innerHTML=`<div class="score">Score: <span id="s">0</span></div>
- <canvas id="c" width="400" height="400"></canvas>
- <p>Use arrow keys or WASD.</p>`;
- const c=document.getElementById("c"),x=c.getContext("2d");
- let snake=[{x:200,y:200}],dx=20,dy=0,food={x:100,y:100},score=0;
- document.onkeydown=e=>{
-   if((e.key==="ArrowUp"||e.key==="w")&&dy===0){dx=0;dy=-20}
-   if((e.key==="ArrowDown"||e.key==="s")&&dy===0){dx=0;dy=20}
-   if((e.key==="ArrowLeft"||e.key==="a")&&dx===0){dx=-20;dy=0}
-   if((e.key==="ArrowRight"||e.key==="d")&&dx===0){dx=20;dy=0}
- };
- let timer=setInterval(()=>{
-   let h={x:snake[0].x+dx,y:snake[0].y+dy};
-   if(h.x<0||h.x>=400||h.y<0||h.y>=400||
-      snake.some(p=>p.x===h.x&&p.y===h.y)){
-      clearInterval(timer);alert("Game Over! Score: "+score);return;
-   }
-   snake.unshift(h);
-   if(h.x===food.x&&h.y===food.y){
-     score++;document.getElementById("s").textContent=score;
-     food={x:Math.floor(Math.random()*20)*20,y:Math.floor(Math.random()*20)*20};
-   }else snake.pop();
-   x.fillStyle="#050509";x.fillRect(0,0,400,400);
-   x.fillStyle="#22d3ee";snake.forEach(p=>x.fillRect(p.x,p.y,18,18));
-   x.fillStyle="#ef4444";x.fillRect(food.x,food.y,18,18);
- },100);
-}
+        <div class="section-heading">
+            <h2>🎮 All Games</h2>
+            <span>20 games</span>
+        </div>
 
-/* TIC TAC TOE */
-function tictactoe(){
- let b=Array(9).fill("");
- document.getElementById("gameArea").innerHTML=`
- <div id="ttt" style="display:grid;grid-template-columns:repeat(3,90px);gap:8px;justify-content:center"></div>
- <p id="msg" class="score">Your turn</p>`;
- const t=document.getElementById("ttt");
- function draw(){
-  t.innerHTML=b.map((v,i)=>`<button class="gameBtn" style="height:90px;font-size:35px" onclick="tt(${i})">${v}</button>`).join("");
- }
- window.tt=i=>{
-  if(b[i])return;b[i]="X";draw();
-  if(win("X"))return end("You win! 🎉");
-  if(b.every(Boolean))return end("Draw!");
-  let empty=b.map((v,i)=>v?null:i).filter(x=>x!==null);
-  b[empty[Math.floor(Math.random()*empty.length)]]="O";draw();
-  if(win("O"))end("Computer wins!");
- };
- function win(p){
-  return [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]
-   .some(q=>q.every(i=>b[i]===p));
- }
- function end(s){document.getElementById("msg").textContent=s}
- draw();
-}
 
-/* REACTION */
-function reaction(){
- document.getElementById("gameArea").innerHTML=`
- <div class="big" id="react">🟥</div>
- <button class="gameBtn" id="reactBtn">START</button>
- <p id="reactionText">Wait for green...</p>`;
- let start;
- const btn=document.getElementById("reactBtn");
- btn.onclick=()=>{
-  if(btn.dataset.wait==="1"){
-   document.getElementById("reactionText").textContent="Too early!";
-   btn.dataset.wait="";
-   return;
-  }
-  btn.dataset.wait="1";btn.textContent="WAIT";
-  document.getElementById("react").textContent="🟥";
-  setTimeout(()=>{
-   if(btn.dataset.wait!=="1")return;
-   document.getElementById("react").textContent="🟩";
-   start=performance.now();btn.dataset.ready="1";btn.textContent="CLICK!";
-  },1000+Math.random()*3000);
- };
- btn.addEventListener("click",()=>{
-  if(btn.dataset.ready==="1"){
-   let ms=Math.round(performance.now()-start);
-   document.getElementById("reactionText").textContent=ms+" ms!";
-   btn.dataset.ready="";btn.dataset.wait="";btn.textContent="TRY AGAIN";
-  }
- });
-}
+        <div class="game-grid" id="gameGrid">
 
-/* CLICKER */
-function clicker(){
- document.getElementById("gameArea").innerHTML=`
- <div class="big" id="clickScore">0</div>
- <button class="gameBtn" id="clickBtn">CLICK ME!</button>
- <p>Try to get as many clicks as possible.</p>`;
- let n=0;
- document.getElementById("clickBtn").onclick=()=>{
-  n++;document.getElementById("clickScore").textContent=n;
- };
-}
 
-/* GUESS */
-function guess(){
- let n=Math.floor(Math.random()*100)+1;
- document.getElementById("gameArea").innerHTML=`
- <p>I'm thinking of a number from 1 to 100.</p>
- <input id="guessInput" type="number" style="padding:12px;margin:15px">
- <button class="gameBtn" onclick="makeGuess()">GUESS</button>
- <p id="guessResult"></p>`;
- window.makeGuess=()=>{
-  let g=+document.getElementById("guessInput").value;
-  document.getElementById("guessResult").textContent=
-   g===n?"🎉 Correct!":g<n?"⬆️ Higher!":"⬇️ Lower!";
- };
-}
+            <!-- GAME 1 -->
 
-/* RPS */
-function rps(){
- document.getElementById("gameArea").innerHTML=`
- <div class="big">✊ ✋ ✌️</div>
- ${["Rock","Paper","Scissors"].map(x=>`<button class="gameBtn" onclick="playRps('${x}')">${x}</button>`).join("")}
- <p id="rpsResult" class="score"></p>`;
- window.playRps=p=>{
-  let arr=["Rock","Paper","Scissors"],c=arr[Math.floor(Math.random()*3)];
-  let win=(p==="Rock"&&c==="Scissors")||(p==="Paper"&&c==="Rock")||(p==="Scissors"&&c==="Paper");
-  document.getElementById("rpsResult").textContent=
-   p===c?`Draw! Computer chose ${c}`:win?`You win! Computer chose ${c}`:`You lose! Computer chose ${c}`;
- };
-}
+            <div class="game-card">
 
-/* MEMORY */
-function memory(){
- let vals=["🍎","🍌","🍇","🍉","🍒","🥝","🍋","🥥"];
- vals=[...vals,...vals].sort(()=>Math.random()-.5);
- let open=[],matched=0;
- document.getElementById("gameArea").innerHTML=`<div class="memory" id="memory"></div><p id="memmsg"></p>`;
- const m=document.getElementById("memory");
- m.innerHTML=vals.map((v,i)=>`<div class="mem" data-i="${i}" onclick="flip(${i})">?</div>`).join("");
- window.flip=i=>{
-  if(open.length>=2||m.children[i].textContent!=="?")return;
-  m.children[i].textContent=vals[i];open.push(i);
-  if(open.length===2){
-   if(vals[open[0]]===vals[open[1]]){
-    matched++;open=[];
-    if(matched===8)document.getElementById("memmsg").textContent="🎉 You matched everything!";
-   }else setTimeout(()=>{
-    open.forEach(j=>m.children[j].textContent="?");open=[];
-   },700);
-  }
- };
-}
+                <div class="game-icon">🐍</div>
 
-/* 2048 */
-function game2048(){
- let b=Array(16).fill(0);
- function add(){let e=b.map((v,i)=>v?null:i).filter(v=>v!==null);if(e.length)b[e
+                <div class="game-info">
+
+                    <h3>Snake</h3>
+
+                    <p>
+                        Eat the food and grow your snake.
+                    </p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★★</span>
+
+                        <a href="games/game01.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GAME 2 -->
+
+            <div class="game-card">
+
+                <div class="game-icon">🏓</div>
+
+                <div class="game-info">
+
+                    <h3>Pong</h3>
+
+                    <p>
+                        Classic arcade paddle action.
+                    </p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★☆</span>
+
+                        <a href="games/game02.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GAME 3 -->
+
+            <div class="game-card">
+
+                <div class="game-icon">🧱</div>
+
+                <div class="game-info">
+
+                    <h3>Breakout</h3>
+
+                    <p>
+                        Destroy every block with the ball.
+                    </p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★★</span>
+
+                        <a href="games/game03.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GAME 4 -->
+
+            <div class="game-card">
+
+                <div class="game-icon">❌</div>
+
+                <div class="game-info">
+
+                    <h3>Tic Tac Toe</h3>
+
+                    <p>
+                        Challenge the computer.
+                    </p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★☆</span>
+
+                        <a href="games/game04.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GAME 5 -->
+
+            <div class="game-card">
+
+                <div class="game-icon">🧠</div>
+
+                <div class="game-info">
+
+                    <h3>Memory Match</h3>
+
+                    <p>
+                        Find all matching pairs.
+                    </p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★★</span>
+
+                        <a href="games/game05.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GAME 6 -->
+
+            <div class="game-card">
+
+                <div class="game-icon">💣</div>
+
+                <div class="game-info">
+
+                    <h3>Minesweeper</h3>
+
+                    <p>
+                        Clear the board without hitting mines.
+                    </p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★☆</span>
+
+                        <a href="games/game06.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GAME 7 -->
+
+            <div class="game-card">
+
+                <div class="game-icon">🐦</div>
+
+                <div class="game-info">
+
+                    <h3>Sky Hopper</h3>
+
+                    <p>
+                        Dodge obstacles and fly higher.
+                    </p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★☆</span>
+
+                        <a href="games/game07.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GAME 8 -->
+
+            <div class="game-card">
+
+                <div class="game-icon">🚀</div>
+
+                <div class="game-info">
+
+                    <h3>Space Shooter</h3>
+
+                    <p>
+                        Defend your spaceship.
+                    </p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★★</span>
+
+                        <a href="games/game08.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GAME 9 -->
+
+            <div class="game-card">
+
+                <div class="game-icon">🏎️</div>
+
+                <div class="game-info">
+
+                    <h3>Speed Racer</h3>
+
+                    <p>
+                        Dodge traffic and race for a high score.
+                    </p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★★</span>
+
+                        <a href="games/game09.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GAME 10 -->
+
+            <div class="game-card">
+
+                <div class="game-icon">🧟</div>
+
+                <div class="game-info">
+
+                    <h3>Zombie Escape</h3>
+
+                    <p>
+                        Survive waves of enemies.
+                    </p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★☆</span>
+
+                        <a href="games/game10.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GAME 11 -->
+
+            <div class="game-card">
+
+                <div class="game-icon">☄️</div>
+
+                <div class="game-info">
+
+                    <h3>Asteroid Attack</h3>
+
+                    <p>
+                        Blast incoming asteroids.
+                    </p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★★</span>
+
+                        <a href="games/game11.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GAME 12 -->
+
+            <div class="game-card">
+
+                <div class="game-icon">🔢</div>
+
+                <div class="game-info">
+
+                    <h3>2048</h3>
+
+                    <p>
+                        Combine numbers to reach 2048.
+                    </p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★★</span>
+
+                        <a href="games/game12.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GAME 13 -->
+
+            <div class="game-card">
+
+                <div class="game-icon">🎯</div>
+
+                <div class="game-info">
+
+                    <h3>Target Master</h3>
+
+                    <p>
+                        Hit as many targets as possible.
+                    </p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★☆</span>
+
+                        <a href="games/game13.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GAME 14 -->
+
+            <div class="game-card">
+
+                <div class="game-icon">🃏</div>
+
+                <div class="game-info">
+
+                    <h3>Card Clash</h3>
+
+                    <p>
+                        Test your card skills.
+                    </p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★☆</span>
+
+                        <a href="games/game14.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GAME 15 -->
+
+            <div class="game-card">
+
+                <div class="game-icon">🏹</div>
+
+                <div class="game-info">
+
+                    <h3>Arrow Shot</h3>
+
+                    <p>
+                        Aim carefully and hit the targets.
+                    </p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★★</span>
+
+                        <a href="games/game15.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GAME 16 -->
+
+            <div class="game-card">
+
+                <div class="game-icon">⚔️</div>
+
+                <div class="game-info">
+
+                    <h3>Dungeon Quest</h3>
+
+                    <p>
+                        Explore a mysterious dungeon.
+                    </p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★★</span>
+
+                        <a href="games/game16.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GAME 17 -->
+
+            <div class="game-card">
+
+                <div class="game-icon">🧩</div>
+
+                <div class="game-info">
+
+                    <h3>Tetris</h3>
+
+                    <p>
+                        Stack falling blocks.
+                    </p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★★</span>
+
+                        <a href="games/game17.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GAME 18 -->
+
+            <div class="game-card">
+
+                <div class="game-icon">🔴</div>
+
+                <div class="game-info">
+
+                    <h3>Connect Four</h3>
+
+                    <p>
+                        Connect four pieces to win.
+                    </p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★☆</span>
+
+                        <a href="games/game18.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GAME 19 -->
+
+            <div class="game-card">
+
+                <div class="game-icon">🏀</div>
+
+                <div class="game-info">
+
+                    <h3>Basketball</h3>
+
+                    <p>
+                        Score as many baskets as you can.
+                    </p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★☆</span>
+
+                        <a href="games/game19.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GAME 20 -->
+
+            <div class="game-card">
+
+                <div class="game-icon">⚽</div>
+
+                <div class="game-info">
+
+                    <h3>Penalty Kick</h3>
+
+                    <p>
+                        Take the winning penalty.
+                    </p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★★</span>
+
+                        <a href="games/game20.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         POPULAR
+    ========================== -->
+
+    <section class="section" id="popular">
+
+        <div class="section-heading">
+            <h2>🔥 Popular</h2>
+            <span>Players are loving these</span>
+        </div>
+
+        <div class="game-grid">
+
+            <div class="game-card">
+
+                <div class="game-icon">🐍</div>
+
+                <div class="game-info">
+
+                    <h3>Snake</h3>
+
+                    <p>Classic arcade fun.</p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★★</span>
+
+                        <a href="games/game01.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="game-card">
+
+                <div class="game-icon">🚀</div>
+
+                <div class="game-info">
+
+                    <h3>Space Shooter</h3>
+
+                    <p>Defend the galaxy.</p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★★</span>
+
+                        <a href="games/game08.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="game-card">
+
+                <div class="game-icon">🧩</div>
+
+                <div class="game-info">
+
+                    <h3>Tetris</h3>
+
+                    <p>Stack your way to victory.</p>
+
+                    <div class="game-bottom">
+
+                        <span class="rating">★★★★★</span>
+
+                        <a href="games/game17.html" class="play">
+                            PLAY
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         FOOTER
+    ========================== -->
+
+    <footer>
+
+        <p>
+            © 2026 <strong>GameZone</strong>
+        </p>
+
+        <p>
+            20 games • One website • Endless fun 🎮
+        </p>
+
+    </footer>
+
+
+    <!-- =========================
+         SEARCH SCRIPT
+    ========================== -->
+
+    <script>
+
+        function searchGames() {
+
+            const search =
+                document
+                .getElementById("search")
+                .value
+                .toLowerCase();
+
+            const games =
+                document.querySelectorAll(".game-card");
+
+            games.forEach(function(game) {
+
+                const name =
+                    game
+                    .querySelector("h3")
+                    .textContent
+                    .toLowerCase();
+
+                const description =
+                    game
+                    .querySelector("p")
+                    .textContent
+                    .toLowerCase();
+
+                if (
+                    name.includes(search) ||
+                    description.includes(search)
+                ) {
+
+                    game.style.display = "";
+
+                } else {
+
+                    game.style.display = "none";
+
+                }
+
+            });
+
+        }
+
+    </script>
+
+</body>
+</html>
+```
