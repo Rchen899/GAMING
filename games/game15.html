@@ -1,0 +1,439 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dungeon Quest</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        background: #0a0712;
+        color: white;
+        font-family: Arial, sans-serif;
+        text-align: center;
+    }
+
+    h1 {
+        color: #c084fc;
+        margin: 20px 0 5px;
+    }
+
+    p {
+        color: #aaa;
+    }
+
+    .info {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        margin: 15px;
+        font-size: 18px;
+    }
+
+    canvas {
+        display: block;
+        width: 700px;
+        max-width: 95%;
+        height: auto;
+        margin: 15px auto;
+        background: #151020;
+        border: 3px solid #c084fc;
+        border-radius: 12px;
+    }
+
+    button {
+        background: #c084fc;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        margin: 6px;
+    }
+
+    button:hover {
+        transform: scale(1.05);
+    }
+
+    a {
+        color: #c084fc;
+        text-decoration: none;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>🏰 Dungeon Quest</h1>
+<p>Explore the dungeon and collect the treasure!</p>
+
+<div class="info">
+    <div>⭐ Score: <span id="score">0</span></div>
+    <div>❤️ Lives: <span id="lives">3</span></div>
+</div>
+
+<canvas id="game" width="700" height="500"></canvas>
+
+<button onclick="restartGame()">🔄 Restart</button>
+
+<p>
+    Move: <b>WASD</b> or <b>Arrow Keys</b>
+</p>
+
+<p>
+    <a href="../index.html">← Back to GameZone</a>
+</p>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const scoreText = document.getElementById("score");
+const livesText = document.getElementById("lives");
+
+let keys = {};
+let player;
+let gems;
+let enemies;
+let score;
+let lives;
+let gameOver;
+let won;
+
+const tileSize = 50;
+
+document.addEventListener("keydown", e => {
+    keys[e.key.toLowerCase()] = true;
+
+    if (
+        ["arrowup", "arrowdown", "arrowleft", "arrowright", " "]
+        .includes(e.key.toLowerCase())
+    ) {
+        e.preventDefault();
+    }
+
+    if (gameOver && e.key === "Enter") {
+        restartGame();
+    }
+});
+
+document.addEventListener("keyup", e => {
+    keys[e.key.toLowerCase()] = false;
+});
+
+function restartGame() {
+    player = {
+        x: 75,
+        y: 75,
+        size: 28,
+        speed: 4
+    };
+
+    gems = [
+        { x: 175, y: 125, collected: false },
+        { x: 475, y: 125, collected: false },
+        { x: 325, y: 225, collected: false },
+        { x: 125, y: 375, collected: false },
+        { x: 575, y: 375, collected: false }
+    ];
+
+    enemies = [
+        { x: 600, y: 100, size: 28, speed: 1.2 },
+        { x: 400, y: 400, size: 28, speed: 1.1 },
+        { x: 250, y: 300, size: 28, speed: 1.0 }
+    ];
+
+    score = 0;
+    lives = 3;
+    gameOver = false;
+    won = false;
+
+    updateUI();
+}
+
+function updateUI() {
+    scoreText.textContent = score;
+    livesText.textContent = lives;
+}
+
+function update() {
+    if (gameOver) return;
+
+    let oldX = player.x;
+    let oldY = player.y;
+
+    // Movement
+    if (keys["w"] || keys["arrowup"]) {
+        player.y -= player.speed;
+    }
+
+    if (keys["s"] || keys["arrowdown"]) {
+        player.y += player.speed;
+    }
+
+    if (keys["a"] || keys["arrowleft"]) {
+        player.x -= player.speed;
+    }
+
+    if (keys["d"] || keys["arrowright"]) {
+        player.x += player.speed;
+    }
+
+    // Keep player inside dungeon
+    player.x = Math.max(25, Math.min(canvas.width - 25, player.x));
+    player.y = Math.max(25, Math.min(canvas.height - 25, player.y));
+
+    // Move enemies toward player
+    enemies.forEach(enemy => {
+        const dx = player.x - enemy.x;
+        const dy = player.y - enemy.y;
+
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance > 0) {
+            enemy.x += (dx / distance) * enemy.speed;
+            enemy.y += (dy / distance) * enemy.speed;
+        }
+
+        // Enemy collision
+        if (distance < player.size + enemy.size) {
+            lives--;
+
+            player.x = 75;
+            player.y = 75;
+
+            updateUI();
+
+            if (lives <= 0) {
+                gameOver = true;
+            }
+        }
+    });
+
+    // Collect gems
+    gems.forEach(gem => {
+        if (gem.collected) return;
+
+        const dx = player.x - gem.x;
+        const dy = player.y - gem.y;
+
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < 30) {
+            gem.collected = true;
+            score += 100;
+            updateUI();
+        }
+    });
+
+    // Win condition
+    if (gems.every(gem => gem.collected)) {
+        won = true;
+        gameOver = true;
+    }
+}
+
+function drawDungeon() {
+    ctx.fillStyle = "#151020";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Floor tiles
+    for (let x = 0; x < canvas.width; x += tileSize) {
+        for (let y = 0; y < canvas.height; y += tileSize) {
+
+            ctx.strokeStyle = "#211a30";
+            ctx.strokeRect(
+                x,
+                y,
+                tileSize,
+                tileSize
+            );
+        }
+    }
+
+    // Decorative walls
+    ctx.fillStyle = "#302440";
+
+    ctx.fillRect(0, 0, canvas.width, 15);
+    ctx.fillRect(0, canvas.height - 15, canvas.width, 15);
+    ctx.fillRect(0, 0, 15, canvas.height);
+    ctx.fillRect(canvas.width - 15, 0, 15, canvas.height);
+}
+
+function drawPlayer() {
+    ctx.fillStyle = "#60a5fa";
+
+    ctx.fillRect(
+        player.x - player.size / 2,
+        player.y - player.size / 2,
+        player.size,
+        player.size
+    );
+
+    // Helmet
+    ctx.fillStyle = "#93c5fd";
+
+    ctx.fillRect(
+        player.x - 10,
+        player.y - 16,
+        20,
+        8
+    );
+
+    // Eyes
+    ctx.fillStyle = "#111";
+
+    ctx.fillRect(
+        player.x - 7,
+        player.y - 3,
+        4,
+        4
+    );
+
+    ctx.fillRect(
+        player.x + 3,
+        player.y - 3,
+        4,
+        4
+    );
+}
+
+function drawGems() {
+    gems.forEach(gem => {
+        if (gem.collected) return;
+
+        ctx.fillStyle = "#f472b6";
+
+        ctx.beginPath();
+
+        ctx.moveTo(gem.x, gem.y - 14);
+        ctx.lineTo(gem.x + 12, gem.y);
+        ctx.lineTo(gem.x, gem.y + 14);
+        ctx.lineTo(gem.x - 12, gem.y);
+
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "#fbcfe8";
+
+        ctx.beginPath();
+        ctx.moveTo(gem.x, gem.y - 9);
+        ctx.lineTo(gem.x + 5, gem.y);
+        ctx.lineTo(gem.x, gem.y + 3);
+        ctx.lineTo(gem.x - 5, gem.y);
+
+        ctx.closePath();
+        ctx.fill();
+    });
+}
+
+function drawEnemies() {
+    enemies.forEach(enemy => {
+        ctx.fillStyle = "#a78bfa";
+
+        ctx.beginPath();
+        ctx.arc(
+            enemy.x,
+            enemy.y,
+            enemy.size / 2,
+            0,
+            Math.PI * 2
+        );
+        ctx.fill();
+
+        // Eyes
+        ctx.fillStyle = "#111";
+
+        ctx.fillRect(
+            enemy.x - 8,
+            enemy.y - 5,
+            5,
+            5
+        );
+
+        ctx.fillRect(
+            enemy.x + 3,
+            enemy.y - 5,
+            5,
+            5
+        );
+
+        // Smile
+        ctx.fillRect(
+            enemy.x - 7,
+            enemy.y + 6,
+            14,
+            3
+        );
+    });
+}
+
+function drawGameOver() {
+    if (!gameOver) return;
+
+    ctx.fillStyle = "rgba(0,0,0,0.78)";
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    ctx.textAlign = "center";
+
+    ctx.fillStyle = won ? "#fbbf24" : "#c084fc";
+
+    ctx.font = "bold 44px Arial";
+
+    ctx.fillText(
+        won ? "🏆 QUEST COMPLETE!" : "GAME OVER",
+        canvas.width / 2,
+        220
+    );
+
+    ctx.fillStyle = "white";
+    ctx.font = "24px Arial";
+
+    ctx.fillText(
+        "Score: " + score,
+        canvas.width / 2,
+        265
+    );
+
+    ctx.font = "18px Arial";
+
+    ctx.fillText(
+        "Press Enter or Restart",
+        canvas.width / 2,
+        310
+    );
+}
+
+function draw() {
+    drawDungeon();
+    drawGems();
+    drawEnemies();
+    drawPlayer();
+    drawGameOver();
+}
+
+function gameLoop() {
+    update();
+    draw();
+
+    requestAnimationFrame(gameLoop);
+}
+
+restartGame();
+gameLoop();
+</script>
+
+</body>
+</html>
+```
