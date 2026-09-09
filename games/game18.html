@@ -1,0 +1,512 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Basketball Shot - GameZone</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #080b18;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .game {
+      text-align: center;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    h1 {
+      color: #ff9d00;
+      margin: 5px;
+    }
+
+    p {
+      color: #aaa;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      background: #13182b;
+      padding: 12px;
+      border-radius: 10px;
+      margin: 12px 0;
+      font-weight: bold;
+    }
+
+    canvas {
+      width: 100%;
+      max-width: 500px;
+      border: 3px solid #ff9d00;
+      border-radius: 12px;
+      display: block;
+      margin: auto;
+      background: #18243d;
+      cursor: crosshair;
+    }
+
+    button {
+      border: none;
+      background: #ff9d00;
+      color: #171000;
+      font-weight: bold;
+      padding: 12px 22px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 12px 5px 5px;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+    }
+
+    .back {
+      display: inline-block;
+      margin-top: 10px;
+      color: #ff9d00;
+      text-decoration: none;
+    }
+
+    .controls {
+      color: #999;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="game">
+
+  <h1>🏀 Basketball Shot</h1>
+  <p>Click and drag from the ball toward the hoop to shoot!</p>
+
+  <div class="stats">
+    <div>Score: <span id="score">0</span></div>
+    <div>Shots: <span id="shots">10</span></div>
+    <div>Best: <span id="best">0</span></div>
+  </div>
+
+  <canvas id="game" width="500" height="600"></canvas>
+
+  <button onclick="restartGame()">🔄 Restart</button>
+
+  <div class="controls">
+    Drag from the ball and release to shoot
+  </div>
+
+  <a class="back" href="../index.html">← Back to GameZone</a>
+
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const W = canvas.width;
+const H = canvas.height;
+
+let score = 0;
+let shots = 10;
+let best = Number(localStorage.getItem("basketBest")) || 0;
+
+let ball;
+let hoop;
+let shooting = false;
+let dragging = false;
+let gameOver = false;
+
+let mouseX = 0;
+let mouseY = 0;
+
+document.getElementById("best").textContent = best;
+
+function restartGame() {
+  score = 0;
+  shots = 10;
+  gameOver = false;
+  shooting = false;
+  dragging = false;
+
+  ball = {
+    x: 100,
+    y: 500,
+    radius: 16,
+    vx: 0,
+    vy: 0
+  };
+
+  hoop = {
+    x: 350,
+    y: 230,
+    width: 85,
+    height: 10
+  };
+
+  updateStats();
+}
+
+function updateStats() {
+  document.getElementById("score").textContent = score;
+  document.getElementById("shots").textContent = shots;
+  document.getElementById("best").textContent = best;
+}
+
+function getMousePosition(event) {
+  const rect = canvas.getBoundingClientRect();
+
+  return {
+    x: (event.clientX - rect.left) * W / rect.width,
+    y: (event.clientY - rect.top) * H / rect.height
+  };
+}
+
+canvas.addEventListener("pointerdown", event => {
+  if (gameOver || shooting) return;
+
+  const pos = getMousePosition(event);
+
+  const distance = Math.hypot(
+    pos.x - ball.x,
+    pos.y - ball.y
+  );
+
+  if (distance < 50) {
+    dragging = true;
+    mouseX = pos.x;
+    mouseY = pos.y;
+  }
+});
+
+canvas.addEventListener("pointermove", event => {
+  if (!dragging) return;
+
+  const pos = getMousePosition(event);
+
+  mouseX = pos.x;
+  mouseY = pos.y;
+});
+
+canvas.addEventListener("pointerup", event => {
+  if (!dragging) return;
+
+  dragging = false;
+
+  const pos = getMousePosition(event);
+
+  shoot(
+    pos.x,
+    pos.y
+  );
+});
+
+function shoot(targetX, targetY) {
+  if (shots <= 0) return;
+
+  let dx = ball.x - targetX;
+  let dy = ball.y - targetY;
+
+  const power = Math.min(
+    Math.hypot(dx, dy),
+    180
+  );
+
+  const angle = Math.atan2(dy, dx);
+
+  ball.vx =
+    Math.cos(angle) * power * 0.075;
+
+  ball.vy =
+    Math.sin(angle) * power * 0.075;
+
+  shooting = true;
+  shots--;
+
+  updateStats();
+}
+
+function drawCourt() {
+
+  // Sky
+  ctx.fillStyle = "#18243d";
+  ctx.fillRect(0, 0, W, H);
+
+  // Court
+  ctx.fillStyle = "#c98242";
+  ctx.fillRect(0, 350, W, 250);
+
+  // Court lines
+  ctx.strokeStyle = "rgba(255,255,255,0.7)";
+  ctx.lineWidth = 4;
+
+  ctx.beginPath();
+  ctx.moveTo(0, 540);
+  ctx.lineTo(W, 540);
+  ctx.stroke();
+
+  // Backboard
+  ctx.fillStyle = "#eeeeee";
+  ctx.fillRect(385, 135, 10, 110);
+
+  // Backboard square
+  ctx.strokeStyle = "#ff4444";
+  ctx.lineWidth = 5;
+
+  ctx.strokeRect(
+    330,
+    170,
+    80,
+    60
+  );
+
+  // Hoop
+  ctx.strokeStyle = "#ff5b1f";
+  ctx.lineWidth = 8;
+
+  ctx.beginPath();
+  ctx.moveTo(
+    hoop.x,
+    hoop.y
+  );
+
+  ctx.lineTo(
+    hoop.x + hoop.width,
+    hoop.y
+  );
+
+  ctx.stroke();
+
+  // Net
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 2;
+
+  for (let i = 0; i <= 6; i++) {
+
+    const x =
+      hoop.x + i * (hoop.width / 6);
+
+    ctx.beginPath();
+    ctx.moveTo(x, hoop.y + 5);
+    ctx.lineTo(
+      hoop.x + hoop.width / 2,
+      hoop.y + 55
+    );
+    ctx.stroke();
+  }
+}
+
+function drawBall() {
+
+  ctx.beginPath();
+
+  ctx.arc(
+    ball.x,
+    ball.y,
+    ball.radius,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fillStyle = "#ff7a00";
+  ctx.fill();
+
+  ctx.strokeStyle = "#4d2100";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Ball lines
+  ctx.beginPath();
+
+  ctx.arc(
+    ball.x,
+    ball.y,
+    ball.radius * 0.7,
+    -Math.PI / 2,
+    Math.PI / 2
+  );
+
+  ctx.strokeStyle = "#4d2100";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+function drawAim() {
+
+  if (!dragging) return;
+
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 3;
+  ctx.setLineDash([8, 8]);
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    ball.x,
+    ball.y
+  );
+
+  ctx.lineTo(
+    mouseX,
+    mouseY
+  );
+
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = "white";
+  ctx.font = "16px Arial";
+
+  ctx.fillText(
+    "Release to shoot!",
+    20,
+    30
+  );
+}
+
+function update() {
+
+  if (!shooting) return;
+
+  ball.vy += 0.28;
+
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+
+  // Hoop detection
+  if (
+    ball.vy > 0 &&
+    ball.x > hoop.x &&
+    ball.x < hoop.x + hoop.width &&
+    ball.y > hoop.y - 8 &&
+    ball.y < hoop.y + 15
+  ) {
+
+    score++;
+
+    if (score > best) {
+      best = score;
+
+      localStorage.setItem(
+        "basketBest",
+        best
+      );
+    }
+
+    shooting = false;
+
+    resetBall();
+    updateStats();
+
+    return;
+  }
+
+  // Floor
+  if (ball.y > 520) {
+
+    shooting = false;
+    resetBall();
+    updateStats();
+  }
+
+  // Walls
+  if (
+    ball.x < ball.radius ||
+    ball.x > W - ball.radius
+  ) {
+    ball.vx *= -0.7;
+  }
+}
+
+function resetBall() {
+
+  ball.x = 100;
+  ball.y = 500;
+  ball.vx = 0;
+  ball.vy = 0;
+
+  if (shots <= 0) {
+    gameOver = true;
+  }
+}
+
+function drawGameOver() {
+
+  ctx.fillStyle = "rgba(0,0,0,0.75)";
+  ctx.fillRect(
+    0,
+    0,
+    W,
+    H
+  );
+
+  ctx.textAlign = "center";
+
+  ctx.fillStyle = "#ff9d00";
+  ctx.font = "bold 42px Arial";
+
+  ctx.fillText(
+    "GAME OVER",
+    W / 2,
+    H / 2 - 30
+  );
+
+  ctx.fillStyle = "white";
+  ctx.font = "22px Arial";
+
+  ctx.fillText(
+    "Score: " + score,
+    W / 2,
+    H / 2 + 15
+  );
+
+  ctx.font = "16px Arial";
+
+  ctx.fillText(
+    "Press Restart to play again",
+    W / 2,
+    H / 2 + 55
+  );
+}
+
+function draw() {
+
+  drawCourt();
+  drawAim();
+  drawBall();
+
+  if (gameOver) {
+    drawGameOver();
+  }
+}
+
+function loop() {
+
+  update();
+  draw();
+
+  requestAnimationFrame(loop);
+}
+
+restartGame();
+loop();
+</script>
+
+</body>
+</html>
+```
