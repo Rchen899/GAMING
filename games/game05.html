@@ -1,0 +1,538 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Memory Match | GameZone</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    background: #080b14;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.game-wrapper {
+    width: 100%;
+    max-width: 650px;
+    text-align: center;
+}
+
+.top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.back {
+    color: #00e5ff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+h1 {
+    color: #00e5ff;
+    font-size: 26px;
+}
+
+.stats {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat {
+    background: #111827;
+    border: 1px solid #293449;
+    border-radius: 9px;
+    padding: 10px 22px;
+}
+
+.stat span {
+    display: block;
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.stat strong {
+    display: block;
+    font-size: 21px;
+    margin-top: 4px;
+}
+
+.board {
+    width: 480px;
+    max-width: 100%;
+    margin: auto;
+
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.card {
+    aspect-ratio: 1 / 1;
+
+    background: #111827;
+    border: 2px solid #293449;
+    border-radius: 12px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    font-size: 42px;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s,
+        background 0.2s,
+        border-color 0.2s;
+
+    user-select: none;
+}
+
+.card:hover {
+    border-color: #00e5ff;
+    transform: scale(1.03);
+}
+
+.card.flipped,
+.card.matched {
+    background: #1e293b;
+    border-color: #00e5ff;
+}
+
+.card.matched {
+    border-color: #22c55e;
+    box-shadow: 0 0 15px rgba(34,197,94,.2);
+    cursor: default;
+}
+
+.card .symbol {
+    display: none;
+}
+
+.card.flipped .symbol,
+.card.matched .symbol {
+    display: block;
+}
+
+.question {
+    font-size: 30px;
+    color: #64748b;
+}
+
+.card.flipped .question,
+.card.matched .question {
+    display: none;
+}
+
+.message {
+    min-height: 25px;
+    margin-top: 18px;
+    color: #cbd5e1;
+}
+
+button {
+    margin-top: 15px;
+    padding: 12px 26px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: #a855f7;
+    color: white;
+
+    font-weight: bold;
+    font-size: 15px;
+
+    cursor: pointer;
+}
+
+button:hover {
+    background: #9333ea;
+}
+
+.instructions {
+    color: #64748b;
+    font-size: 13px;
+    margin-top: 18px;
+}
+
+@media (max-width: 520px) {
+
+    .board {
+        gap: 7px;
+    }
+
+    .card {
+        font-size: 30px;
+        border-radius: 9px;
+    }
+
+    .stats {
+        gap: 7px;
+    }
+
+    .stat {
+        padding: 8px 13px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="game-wrapper">
+
+    <div class="top">
+        <a href="../index.html" class="back">← GameZone</a>
+        <h1>🧠 Memory Match</h1>
+        <div style="width:70px"></div>
+    </div>
+
+    <div class="stats">
+
+        <div class="stat">
+            <span>MOVES</span>
+            <strong id="moves">0</strong>
+        </div>
+
+        <div class="stat">
+            <span>PAIRS</span>
+            <strong id="pairs">0 / 8</strong>
+        </div>
+
+    </div>
+
+    <div class="board" id="board"></div>
+
+    <div class="message" id="message">
+        Find all 8 matching pairs!
+    </div>
+
+    <button onclick="restartGame()">🔄 New Game</button>
+
+    <div class="instructions">
+        Click two cards to reveal them. Remember where each symbol is! 🎮
+    </div>
+
+</div>
+
+<script>
+
+/* =========================
+   GAME VARIABLES
+========================= */
+
+const symbols = [
+    "🍎",
+    "🚀",
+    "🐱",
+    "⚽",
+    "🎮",
+    "🌟",
+    "🍕",
+    "🦄"
+];
+
+let cards = [];
+
+let firstCard = null;
+let secondCard = null;
+
+let lockBoard = false;
+
+let moves = 0;
+let matchedPairs = 0;
+
+
+/* =========================
+   ELEMENTS
+========================= */
+
+const board =
+    document.getElementById("board");
+
+const movesElement =
+    document.getElementById("moves");
+
+const pairsElement =
+    document.getElementById("pairs");
+
+const messageElement =
+    document.getElementById("message");
+
+
+/* =========================
+   SHUFFLE
+========================= */
+
+function shuffle(array) {
+
+    for (
+        let i = array.length - 1;
+        i > 0;
+        i--
+    ) {
+
+        const j =
+            Math.floor(
+                Math.random() * (i + 1)
+            );
+
+        [
+            array[i],
+            array[j]
+        ] =
+        [
+            array[j],
+            array[i]
+        ];
+
+    }
+
+    return array;
+}
+
+
+/* =========================
+   CREATE CARDS
+========================= */
+
+function createCards() {
+
+    cards = shuffle([
+        ...symbols,
+        ...symbols
+    ]);
+
+    board.innerHTML = "";
+
+    cards.forEach(
+        (symbol, index) => {
+
+            const card =
+                document.createElement("div");
+
+            card.className = "card";
+
+            card.dataset.symbol =
+                symbol;
+
+            card.dataset.index =
+                index;
+
+            card.innerHTML = `
+                <span class="question">?</span>
+                <span class="symbol">${symbol}</span>
+            `;
+
+            card.addEventListener(
+                "click",
+                flipCard
+            );
+
+            board.appendChild(card);
+
+        }
+    );
+
+}
+
+
+/* =========================
+   FLIP CARD
+========================= */
+
+function flipCard() {
+
+    if (lockBoard) {
+        return;
+    }
+
+    if (this === firstCard) {
+        return;
+    }
+
+    if (
+        this.classList.contains("matched")
+    ) {
+        return;
+    }
+
+
+    this.classList.add("flipped");
+
+
+    if (!firstCard) {
+
+        firstCard = this;
+
+        return;
+
+    }
+
+
+    secondCard = this;
+
+    moves++;
+
+    movesElement.textContent =
+        moves;
+
+    checkMatch();
+
+}
+
+
+/* =========================
+   CHECK MATCH
+========================= */
+
+function checkMatch() {
+
+    const isMatch =
+        firstCard.dataset.symbol ===
+        secondCard.dataset.symbol;
+
+
+    if (isMatch) {
+
+        disableCards();
+
+    } else {
+
+        unflipCards();
+
+    }
+
+}
+
+
+/* =========================
+   MATCHED CARDS
+========================= */
+
+function disableCards() {
+
+    firstCard.classList.add("matched");
+
+    secondCard.classList.add("matched");
+
+    matchedPairs++;
+
+    pairsElement.textContent =
+        `${matchedPairs} / 8`;
+
+    resetTurn();
+
+
+    if (matchedPairs === 8) {
+
+        messageElement.textContent =
+            `🎉 You won in ${moves} moves!`;
+
+    }
+
+}
+
+
+/* =========================
+   WRONG CARDS
+========================= */
+
+function unflipCards() {
+
+    lockBoard = true;
+
+    setTimeout(() => {
+
+        firstCard.classList.remove(
+            "flipped"
+        );
+
+        secondCard.classList.remove(
+            "flipped"
+        );
+
+        resetTurn();
+
+    }, 750);
+
+}
+
+
+/* =========================
+   RESET TURN
+========================= */
+
+function resetTurn() {
+
+    firstCard = null;
+
+    secondCard = null;
+
+    lockBoard = false;
+
+}
+
+
+/* =========================
+   RESTART GAME
+========================= */
+
+function restartGame() {
+
+    moves = 0;
+
+    matchedPairs = 0;
+
+    firstCard = null;
+
+    secondCard = null;
+
+    lockBoard = false;
+
+    movesElement.textContent =
+        "0";
+
+    pairsElement.textContent =
+        "0 / 8";
+
+    messageElement.textContent =
+        "Find all 8 matching pairs!";
+
+    createCards();
+
+}
+
+
+/* =========================
+   START
+========================= */
+
+restartGame();
+
+</script>
+
+</body>
+</html>
+```
