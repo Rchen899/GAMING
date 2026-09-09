@@ -1,0 +1,251 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Card Clash</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        background: #0b1020;
+        color: white;
+        font-family: Arial, sans-serif;
+        text-align: center;
+    }
+
+    h1 {
+        color: #ff6b9d;
+        margin: 20px 0 5px;
+    }
+
+    p {
+        color: #aaa;
+    }
+
+    .scoreboard {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        margin: 15px;
+        font-size: 18px;
+    }
+
+    .area {
+        display: flex;
+        justify-content: center;
+        gap: 50px;
+        margin: 25px auto;
+        flex-wrap: wrap;
+    }
+
+    .side {
+        width: 180px;
+    }
+
+    .card {
+        width: 150px;
+        height: 210px;
+        margin: 15px auto;
+        border-radius: 14px;
+        background: white;
+        color: #111;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        font-size: 55px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+    }
+
+    .card.red {
+        color: #e63946;
+    }
+
+    .card.back {
+        background: #ff6b9d;
+        color: white;
+        font-size: 45px;
+    }
+
+    .value {
+        font-size: 28px;
+        margin-top: 5px;
+    }
+
+    button {
+        background: #ff6b9d;
+        color: white;
+        border: none;
+        padding: 13px 25px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        margin: 6px;
+    }
+
+    button:hover {
+        transform: scale(1.05);
+    }
+
+    #message {
+        min-height: 28px;
+        font-size: 20px;
+        font-weight: bold;
+        color: #ffcc66;
+    }
+
+    a {
+        color: #ff6b9d;
+        text-decoration: none;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>🃏 Card Clash</h1>
+<p>Higher card wins the round!</p>
+
+<div class="scoreboard">
+    <div>You: <span id="playerScore">0</span></div>
+    <div>Computer: <span id="computerScore">0</span></div>
+</div>
+
+<div class="area">
+
+    <div class="side">
+        <h2>You</h2>
+        <div id="playerCard" class="card back">?</div>
+    </div>
+
+    <div class="side">
+        <h2>Computer</h2>
+        <div id="computerCard" class="card back">?</div>
+    </div>
+
+</div>
+
+<div id="message">Click DRAW to start!</div>
+
+<button onclick="drawCards()">🃏 Draw Cards</button>
+<button onclick="restartGame()">🔄 Restart</button>
+
+<p>
+    <a href="../index.html">← Back to GameZone</a>
+</p>
+
+<script>
+const playerCard = document.getElementById("playerCard");
+const computerCard = document.getElementById("computerCard");
+
+const playerScoreText = document.getElementById("playerScore");
+const computerScoreText = document.getElementById("computerScore");
+const message = document.getElementById("message");
+
+let playerScore = 0;
+let computerScore = 0;
+
+const suits = [
+    { symbol: "♥", red: true },
+    { symbol: "♦", red: true },
+    { symbol: "♣", red: false },
+    { symbol: "♠", red: false }
+];
+
+const values = [
+    { name: "2", value: 2 },
+    { name: "3", value: 3 },
+    { name: "4", value: 4 },
+    { name: "5", value: 5 },
+    { name: "6", value: 6 },
+    { name: "7", value: 7 },
+    { name: "8", value: 8 },
+    { name: "9", value: 9 },
+    { name: "10", value: 10 },
+    { name: "J", value: 11 },
+    { name: "Q", value: 12 },
+    { name: "K", value: 13 },
+    { name: "A", value: 14 }
+];
+
+function randomCard() {
+    const suit = suits[Math.floor(Math.random() * suits.length)];
+    const value = values[Math.floor(Math.random() * values.length)];
+
+    return {
+        suit: suit.symbol,
+        red: suit.red,
+        name: value.name,
+        value: value.value
+    };
+}
+
+function showCard(element, card) {
+    element.className = "card";
+
+    if (card.red) {
+        element.classList.add("red");
+    }
+
+    element.innerHTML = `
+        <div>${card.name}</div>
+        <div>${card.suit}</div>
+    `;
+}
+
+function drawCards() {
+    const player = randomCard();
+    const computer = randomCard();
+
+    showCard(playerCard, player);
+    showCard(computerCard, computer);
+
+    if (player.value > computer.value) {
+        playerScore++;
+        message.textContent = "🎉 You win the round!";
+    } else if (player.value < computer.value) {
+        computerScore++;
+        message.textContent = "😮 Computer wins the round!";
+    } else {
+        message.textContent = "🤝 It's a tie!";
+    }
+
+    playerScoreText.textContent = playerScore;
+    computerScoreText.textContent = computerScore;
+
+    if (playerScore >= 10 || computerScore >= 10) {
+        if (playerScore > computerScore) {
+            message.textContent = "🏆 You won the game!";
+        } else {
+            message.textContent = "💻 Computer won the game!";
+        }
+    }
+}
+
+function restartGame() {
+    playerScore = 0;
+    computerScore = 0;
+
+    playerScoreText.textContent = 0;
+    computerScoreText.textContent = 0;
+
+    playerCard.className = "card back";
+    playerCard.textContent = "?";
+
+    computerCard.className = "card back";
+    computerCard.textContent = "?";
+
+    message.textContent = "Click DRAW to start!";
+}
+</script>
+
+</body>
+</html>
+```
