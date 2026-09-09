@@ -1,0 +1,840 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sky Hopper | GameZone</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    background: #080b14;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.game-wrapper {
+    width: 100%;
+    max-width: 600px;
+    text-align: center;
+}
+
+.top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+.back {
+    color: #00e5ff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+h1 {
+    color: #00e5ff;
+}
+
+.stats {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.stat {
+    background: #111827;
+    border: 1px solid #293449;
+    border-radius: 9px;
+    padding: 9px 25px;
+}
+
+.stat span {
+    display: block;
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.stat strong {
+    display: block;
+    font-size: 21px;
+    margin-top: 3px;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    max-width: 500px;
+    height: auto;
+    margin: auto;
+
+    border: 3px solid #00e5ff;
+    border-radius: 10px;
+
+    background: #111827;
+
+    box-shadow: 0 0 30px rgba(0,229,255,.12);
+
+    cursor: pointer;
+}
+
+.message {
+    min-height: 25px;
+    margin-top: 15px;
+    color: #cbd5e1;
+}
+
+button {
+    margin-top: 12px;
+    padding: 12px 26px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: #a855f7;
+    color: white;
+
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #9333ea;
+}
+
+.instructions {
+    color: #64748b;
+    font-size: 13px;
+    margin-top: 16px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="game-wrapper">
+
+    <div class="top">
+        <a href="../index.html" class="back">← GameZone</a>
+        <h1>🐦 Sky Hopper</h1>
+        <div style="width:70px"></div>
+    </div>
+
+    <div class="stats">
+
+        <div class="stat">
+            <span>SCORE</span>
+            <strong id="score">0</strong>
+        </div>
+
+        <div class="stat">
+            <span>BEST</span>
+            <strong id="best">0</strong>
+        </div>
+
+    </div>
+
+    <canvas
+        id="gameCanvas"
+        width="500"
+        height="650">
+    </canvas>
+
+    <div class="message" id="message">
+        Click or press SPACE to hop!
+    </div>
+
+    <button onclick="restartGame()">🔄 Restart</button>
+
+    <div class="instructions">
+        Avoid the pipes and fly as far as you can! 🎮
+    </div>
+
+</div>
+
+<script>
+
+const canvas =
+    document.getElementById("gameCanvas");
+
+const ctx =
+    canvas.getContext("2d");
+
+const scoreElement =
+    document.getElementById("score");
+
+const bestElement =
+    document.getElementById("best");
+
+const messageElement =
+    document.getElementById("message");
+
+
+/* =========================
+   GAME VARIABLES
+========================= */
+
+let score = 0;
+
+let best =
+    Number(localStorage.getItem("skyHopperBest")) || 0;
+
+let gameOver = false;
+
+let started = false;
+
+let animationId;
+
+
+/* =========================
+   BIRD
+========================= */
+
+const bird = {
+
+    x: 120,
+
+    y: 300,
+
+    radius: 18,
+
+    velocity: 0,
+
+    gravity: 0.45,
+
+    jump: -8
+
+};
+
+
+/* =========================
+   PIPES
+========================= */
+
+let pipes = [];
+
+const pipeWidth = 70;
+
+const pipeGap = 165;
+
+const pipeSpeed = 3;
+
+
+let pipeTimer = 0;
+
+
+/* =========================
+   BACKGROUND
+========================= */
+
+let clouds = [
+
+    { x: 80, y: 100, size: 25 },
+    { x: 320, y: 180, size: 30 },
+    { x: 200, y: 400, size: 20 },
+    { x: 430, y: 80, size: 22 }
+
+];
+
+
+/* =========================
+   DRAW BACKGROUND
+========================= */
+
+function drawBackground() {
+
+    ctx.fillStyle = "#111827";
+
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    /* Moon */
+
+    ctx.fillStyle = "#f8fafc";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        410,
+        80,
+        28,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    /* Clouds */
+
+    ctx.fillStyle = "#334155";
+
+    clouds.forEach(cloud => {
+
+        ctx.beginPath();
+
+        ctx.arc(
+            cloud.x,
+            cloud.y,
+            cloud.size,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+    });
+
+
+    /* Ground */
+
+    ctx.fillStyle = "#1e293b";
+
+    ctx.fillRect(
+        0,
+        canvas.height - 35,
+        canvas.width,
+        35
+    );
+
+}
+
+
+/* =========================
+   DRAW BIRD
+========================= */
+
+function drawBird() {
+
+    ctx.save();
+
+    ctx.translate(
+        bird.x,
+        bird.y
+    );
+
+
+    /* Body */
+
+    ctx.fillStyle = "#facc15";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        0,
+        0,
+        bird.radius,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    /* Wing */
+
+    ctx.fillStyle = "#eab308";
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        -7,
+        6,
+        11,
+        7,
+        -0.3,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    /* Eye */
+
+    ctx.fillStyle = "white";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        7,
+        -7,
+        6,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    ctx.fillStyle = "#111827";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        9,
+        -7,
+        2.5,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    /* Beak */
+
+    ctx.fillStyle = "#f97316";
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        bird.radius - 2,
+        -2
+    );
+
+    ctx.lineTo(
+        bird.radius + 13,
+        4
+    );
+
+    ctx.lineTo(
+        bird.radius - 2,
+        8
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+
+    ctx.restore();
+
+}
+
+
+/* =========================
+   DRAW PIPES
+========================= */
+
+function drawPipes() {
+
+    pipes.forEach(pipe => {
+
+        ctx.fillStyle = "#22c55e";
+
+
+        /* Top pipe */
+
+        ctx.fillRect(
+            pipe.x,
+            0,
+            pipeWidth,
+            pipe.top
+        );
+
+
+        /* Bottom pipe */
+
+        ctx.fillRect(
+            pipe.x,
+            pipe.bottom,
+            pipeWidth,
+            canvas.height -
+            pipe.bottom
+        );
+
+
+        /* Pipe edges */
+
+        ctx.fillStyle = "#16a34a";
+
+        ctx.fillRect(
+            pipe.x - 5,
+            pipe.top - 20,
+            pipeWidth + 10,
+            20
+        );
+
+        ctx.fillRect(
+            pipe.x - 5,
+            pipe.bottom,
+            pipeWidth + 10,
+            20
+        );
+
+    });
+
+}
+
+
+/* =========================
+   CREATE PIPE
+========================= */
+
+function createPipe() {
+
+    const minTop = 70;
+
+    const maxTop =
+        canvas.height -
+        pipeGap -
+        100;
+
+
+    const top =
+        Math.floor(
+            Math.random() *
+            (maxTop - minTop)
+        ) + minTop;
+
+
+    pipes.push({
+
+        x: canvas.width,
+
+        top: top,
+
+        bottom:
+            top + pipeGap,
+
+        counted: false
+
+    });
+
+}
+
+
+/* =========================
+   UPDATE BIRD
+========================= */
+
+function updateBird() {
+
+    bird.velocity +=
+        bird.gravity;
+
+    bird.y +=
+        bird.velocity;
+
+
+    /* Ceiling */
+
+    if (bird.y - bird.radius < 0) {
+
+        bird.y =
+            bird.radius;
+
+        bird.velocity = 0;
+
+    }
+
+
+    /* Ground */
+
+    if (
+        bird.y + bird.radius >
+        canvas.height - 35
+    ) {
+
+        endGame();
+
+    }
+
+}
+
+
+/* =========================
+   UPDATE PIPES
+========================= */
+
+function updatePipes() {
+
+    pipeTimer++;
+
+    if (pipeTimer > 105) {
+
+        createPipe();
+
+        pipeTimer = 0;
+
+    }
+
+
+    pipes.forEach(pipe => {
+
+        pipe.x -= pipeSpeed;
+
+
+        /* Score */
+
+        if (
+            !pipe.counted &&
+            pipe.x + pipeWidth < bird.x
+        ) {
+
+            pipe.counted = true;
+
+            score++;
+
+            scoreElement.textContent =
+                score;
+
+        }
+
+    });
+
+
+    pipes =
+        pipes.filter(
+            pipe => pipe.x + pipeWidth > 0
+        );
+
+}
+
+
+/* =========================
+   COLLISION
+========================= */
+
+function checkCollision() {
+
+    for (const pipe of pipes) {
+
+        const birdLeft =
+            bird.x - bird.radius;
+
+        const birdRight =
+            bird.x + bird.radius;
+
+        const birdTop =
+            bird.y - bird.radius;
+
+        const birdBottom =
+            bird.y + bird.radius;
+
+
+        const pipeLeft =
+            pipe.x;
+
+        const pipeRight =
+            pipe.x + pipeWidth;
+
+
+        const hitsPipe =
+            birdRight > pipeLeft &&
+            birdLeft < pipeRight &&
+            (
+                birdTop < pipe.top ||
+                birdBottom > pipe.bottom
+            );
+
+
+        if (hitsPipe) {
+
+            endGame();
+
+            return;
+
+        }
+
+    }
+
+}
+
+
+/* =========================
+   HOP
+========================= */
+
+function hop() {
+
+    if (gameOver) {
+        return;
+    }
+
+
+    if (!started) {
+
+        started = true;
+
+        messageElement.textContent =
+            "Keep flying!";
+
+    }
+
+
+    bird.velocity =
+        bird.jump;
+
+}
+
+
+/* =========================
+   GAME OVER
+========================= */
+
+function endGame() {
+
+    if (gameOver) {
+        return;
+    }
+
+    gameOver = true;
+
+    if (score > best) {
+
+        best = score;
+
+        localStorage.setItem(
+            "skyHopperBest",
+            best
+        );
+
+        bestElement.textContent =
+            best;
+
+    }
+
+
+    messageElement.textContent =
+        `💥 Game Over! Score: ${score}`;
+
+}
+
+
+/* =========================
+   DRAW
+========================= */
+
+function draw() {
+
+    drawBackground();
+
+    drawPipes();
+
+    drawBird();
+
+}
+
+
+/* =========================
+   GAME LOOP
+========================= */
+
+function gameLoop() {
+
+    if (started && !gameOver) {
+
+        updateBird();
+
+        updatePipes();
+
+        checkCollision();
+
+    }
+
+
+    draw();
+
+    animationId =
+        requestAnimationFrame(gameLoop);
+
+}
+
+
+/* =========================
+   RESTART
+========================= */
+
+function restartGame() {
+
+    cancelAnimationFrame(
+        animationId
+    );
+
+    score = 0;
+
+    scoreElement.textContent =
+        "0";
+
+    bestElement.textContent =
+        best;
+
+    gameOver = false;
+
+    started = false;
+
+    pipeTimer = 0;
+
+    pipes = [];
+
+    bird.y = 300;
+
+    bird.velocity = 0;
+
+    messageElement.textContent =
+        "Click or press SPACE to hop!";
+
+    gameLoop();
+
+}
+
+
+/* =========================
+   CONTROLS
+========================= */
+
+canvas.addEventListener(
+    "click",
+    hop
+);
+
+
+document.addEventListener(
+    "keydown",
+    function(event) {
+
+        if (
+            event.code === "Space" ||
+            event.key === "ArrowUp"
+        ) {
+
+            event.preventDefault();
+
+            hop();
+
+        }
+
+    }
+);
+
+
+/* =========================
+   START
+========================= */
+
+restartGame();
+
+</script>
+
+</body>
+</html>
+```
