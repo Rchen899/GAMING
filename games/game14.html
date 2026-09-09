@@ -1,0 +1,517 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arrow Shot</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        background: #0b1020;
+        color: white;
+        font-family: Arial, sans-serif;
+        text-align: center;
+    }
+
+    h1 {
+        color: #ffb84d;
+        margin: 20px 0 5px;
+    }
+
+    p {
+        color: #aaa;
+    }
+
+    .info {
+        display: flex;
+        justify-content: center;
+        gap: 35px;
+        margin: 15px;
+        font-size: 18px;
+    }
+
+    canvas {
+        display: block;
+        width: 700px;
+        max-width: 95%;
+        height: auto;
+        margin: 15px auto;
+        background: #172235;
+        border: 3px solid #ffb84d;
+        border-radius: 12px;
+        cursor: crosshair;
+    }
+
+    button {
+        background: #ffb84d;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        margin: 6px;
+    }
+
+    button:hover {
+        transform: scale(1.05);
+    }
+
+    a {
+        color: #ffb84d;
+        text-decoration: none;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>🏹 Arrow Shot</h1>
+<p>Click and hold to aim, then release to fire!</p>
+
+<div class="info">
+    <div>Score: <span id="score">0</span></div>
+    <div>Shots: <span id="shots">10</span></div>
+    <div>Best: <span id="best">0</span></div>
+</div>
+
+<canvas id="game" width="700" height="500"></canvas>
+
+<button onclick="restartGame()">🔄 Restart</button>
+
+<p>
+    <a href="../index.html">← Back to GameZone</a>
+</p>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const scoreText = document.getElementById("score");
+const shotsText = document.getElementById("shots");
+const bestText = document.getElementById("best");
+
+let score = 0;
+let shots = 10;
+let best = Number(localStorage.getItem("arrowBest")) || 0;
+
+let target;
+let arrow;
+let aiming = false;
+let mouseX = 0;
+let mouseY = 0;
+let gameOver = false;
+
+bestText.textContent = best;
+
+const bow = {
+    x: 100,
+    y: 400
+};
+
+function restartGame() {
+    score = 0;
+    shots = 10;
+    gameOver = false;
+    aiming = false;
+    arrow = null;
+
+    scoreText.textContent = score;
+    shotsText.textContent = shots;
+
+    createTarget();
+    draw();
+}
+
+function createTarget() {
+    target = {
+        x: 560 + Math.random() * 70,
+        y: 100 + Math.random() * 280,
+        radius: 45
+    };
+}
+
+function getMousePosition(event) {
+    const rect = canvas.getBoundingClientRect();
+
+    return {
+        x: (event.clientX - rect.left) *
+            (canvas.width / rect.width),
+
+        y: (event.clientY - rect.top) *
+            (canvas.height / rect.height)
+    };
+}
+
+canvas.addEventListener("mousedown", event => {
+    if (gameOver) return;
+
+    const pos = getMousePosition(event);
+
+    mouseX = pos.x;
+    mouseY = pos.y;
+
+    aiming = true;
+});
+
+canvas.addEventListener("mousemove", event => {
+    const pos = getMousePosition(event);
+
+    mouseX = pos.x;
+    mouseY = pos.y;
+});
+
+canvas.addEventListener("mouseup", event => {
+    if (!aiming || gameOver) return;
+
+    aiming = false;
+
+    const pos = getMousePosition(event);
+
+    shoot(pos.x, pos.y);
+});
+
+canvas.addEventListener("touchstart", event => {
+    if (gameOver) return;
+
+    event.preventDefault();
+
+    const touch = event.touches[0];
+    const rect = canvas.getBoundingClientRect();
+
+    mouseX = (touch.clientX - rect.left) *
+        (canvas.width / rect.width);
+
+    mouseY = (touch.clientY - rect.top) *
+        (canvas.height / rect.height);
+
+    aiming = true;
+});
+
+canvas.addEventListener("touchend", event => {
+    if (!aiming || gameOver) return;
+
+    event.preventDefault();
+
+    aiming = false;
+
+    shoot(mouseX, mouseY);
+});
+
+function shoot(x, y) {
+    if (shots <= 0) return;
+
+    shots--;
+    shotsText.textContent = shots;
+
+    const dx = x - bow.x;
+    const dy = y - bow.y;
+
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance === 0) return;
+
+    const speed = 12;
+
+    arrow = {
+        x: bow.x,
+        y: bow.y,
+        vx: (dx / distance) * speed,
+        vy: (dy / distance) * speed,
+        active: true
+    };
+
+    requestAnimationFrame(arrowLoop);
+}
+
+function arrowLoop() {
+    if (!arrow || !arrow.active) {
+        draw();
+        return;
+    }
+
+    arrow.x += arrow.vx;
+    arrow.y += arrow.vy;
+
+    const dx = arrow.x - target.x;
+    const dy = arrow.y - target.y;
+
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance < target.radius) {
+        score += 10;
+
+        if (distance < target.radius * 0.35) {
+            score += 20;
+        } else if (distance < target.radius * 0.65) {
+            score += 10;
+        }
+
+        if (score > best) {
+            best = score;
+            localStorage.setItem("arrowBest", best);
+        }
+
+        scoreText.textContent = score;
+        bestText.textContent = best;
+
+        arrow.active = false;
+        arrow = null;
+
+        createTarget();
+
+        if (shots <= 0) {
+            endGame();
+        }
+
+        draw();
+        return;
+    }
+
+    if (
+        arrow.x < -50 ||
+        arrow.x > canvas.width + 50 ||
+        arrow.y < -50 ||
+        arrow.y > canvas.height + 50
+    ) {
+        arrow.active = false;
+        arrow = null;
+
+        if (shots <= 0) {
+            endGame();
+        }
+
+        draw();
+        return;
+    }
+
+    draw();
+
+    requestAnimationFrame(arrowLoop);
+}
+
+function drawBackground() {
+    ctx.fillStyle = "#172235";
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    ctx.strokeStyle = "#223149";
+    ctx.lineWidth = 1;
+
+    for (let x = 0; x < canvas.width; x += 35) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+
+    for (let y = 0; y < canvas.height; y += 35) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+}
+
+function drawBow() {
+    ctx.strokeStyle = "#ffb84d";
+    ctx.lineWidth = 6;
+
+    ctx.beginPath();
+    ctx.arc(
+        bow.x,
+        bow.y,
+        45,
+        -Math.PI / 2,
+        Math.PI / 2
+    );
+    ctx.stroke();
+
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.moveTo(
+        bow.x,
+        bow.y - 45
+    );
+
+    ctx.lineTo(
+        bow.x,
+        bow.y + 45
+    );
+
+    ctx.stroke();
+
+    // Aim line
+    if (aiming && !gameOver) {
+        ctx.strokeStyle = "rgba(255,255,255,0.4)";
+        ctx.setLineDash([8, 8]);
+
+        ctx.beginPath();
+        ctx.moveTo(bow.x, bow.y);
+        ctx.lineTo(mouseX, mouseY);
+        ctx.stroke();
+
+        ctx.setLineDash([]);
+    }
+}
+
+function drawTarget() {
+    // Outer ring
+    ctx.beginPath();
+    ctx.arc(
+        target.x,
+        target.y,
+        target.radius,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle = "#f5f5f5";
+    ctx.fill();
+
+    // Ring
+    ctx.beginPath();
+    ctx.arc(
+        target.x,
+        target.y,
+        target.radius * 0.7,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle = "#ffb84d";
+    ctx.fill();
+
+    // Inner ring
+    ctx.beginPath();
+    ctx.arc(
+        target.x,
+        target.y,
+        target.radius * 0.4,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle = "#172235";
+    ctx.fill();
+
+    // Bullseye
+    ctx.beginPath();
+    ctx.arc(
+        target.x,
+        target.y,
+        target.radius * 0.18,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle = "#ffb84d";
+    ctx.fill();
+}
+
+function drawArrow() {
+    if (!arrow) return;
+
+    ctx.save();
+
+    ctx.translate(arrow.x, arrow.y);
+
+    const angle = Math.atan2(
+        arrow.vy,
+        arrow.vx
+    );
+
+    ctx.rotate(angle);
+
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 4;
+
+    ctx.beginPath();
+    ctx.moveTo(-20, 0);
+    ctx.lineTo(15, 0);
+    ctx.stroke();
+
+    ctx.fillStyle = "#ffb84d";
+
+    ctx.beginPath();
+    ctx.moveTo(18, 0);
+    ctx.lineTo(8, -6);
+    ctx.lineTo(8, 6);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+}
+
+function drawGameOver() {
+    if (!gameOver) return;
+
+    ctx.fillStyle = "rgba(0,0,0,0.75)";
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    ctx.textAlign = "center";
+
+    ctx.fillStyle = "#ffb84d";
+    ctx.font = "bold 46px Arial";
+
+    ctx.fillText(
+        "GAME OVER",
+        canvas.width / 2,
+        220
+    );
+
+    ctx.fillStyle = "white";
+    ctx.font = "24px Arial";
+
+    ctx.fillText(
+        "Score: " + score,
+        canvas.width / 2,
+        265
+    );
+
+    ctx.font = "18px Arial";
+
+    ctx.fillText(
+        "Press Restart to play again",
+        canvas.width / 2,
+        310
+    );
+}
+
+function endGame() {
+    gameOver = true;
+    aiming = false;
+    arrow = null;
+    draw();
+}
+
+function draw() {
+    drawBackground();
+    drawTarget();
+    drawBow();
+    drawArrow();
+    drawGameOver();
+}
+
+restartGame();
+</script>
+
+</body>
+</html>
+```
