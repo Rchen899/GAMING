@@ -1,0 +1,461 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Tic-Tac-Toe | GameZone</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    background: #080b14;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.game-wrapper {
+    width: 100%;
+    max-width: 600px;
+    text-align: center;
+}
+
+.top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.back {
+    color: #00e5ff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+h1 {
+    color: #00e5ff;
+}
+
+.status {
+    font-size: 20px;
+    margin-bottom: 20px;
+    color: #cbd5e1;
+}
+
+.board {
+    width: 330px;
+    height: 330px;
+    margin: auto;
+
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.cell {
+    background: #111827;
+    border: 2px solid #293449;
+    border-radius: 12px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    font-size: 65px;
+    font-weight: bold;
+
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+.cell:hover {
+    background: #1e293b;
+    border-color: #00e5ff;
+}
+
+.x {
+    color: #00e5ff;
+}
+
+.o {
+    color: #a855f7;
+}
+
+.winner {
+    border-color: #22c55e;
+    box-shadow: 0 0 20px rgba(34,197,94,.35);
+}
+
+button {
+    margin-top: 25px;
+    padding: 13px 28px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: #a855f7;
+    color: white;
+
+    font-size: 15px;
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+button:hover {
+    background: #9333ea;
+}
+
+.scoreboard {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 25px;
+}
+
+.score {
+    background: #111827;
+    border: 1px solid #293449;
+    border-radius: 8px;
+    padding: 10px 20px;
+}
+
+.score span {
+    display: block;
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.score strong {
+    font-size: 22px;
+}
+
+.instructions {
+    color: #64748b;
+    font-size: 13px;
+    margin-top: 18px;
+}
+
+@media (max-width: 450px) {
+    .board {
+        width: 285px;
+        height: 285px;
+    }
+
+    .cell {
+        font-size: 55px;
+    }
+
+    h1 {
+        font-size: 22px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="game-wrapper">
+
+    <div class="top">
+        <a href="../index.html" class="back">← GameZone</a>
+        <h1>❌ Tic-Tac-Toe ⭕</h1>
+        <div style="width:70px"></div>
+    </div>
+
+    <div class="status" id="status">
+        Player X's turn
+    </div>
+
+    <div class="board" id="board"></div>
+
+    <button onclick="restartGame()">🔄 New Game</button>
+
+    <div class="scoreboard">
+
+        <div class="score">
+            <span>PLAYER X</span>
+            <strong id="xScore">0</strong>
+        </div>
+
+        <div class="score">
+            <span>DRAWS</span>
+            <strong id="drawScore">0</strong>
+        </div>
+
+        <div class="score">
+            <span>PLAYER O</span>
+            <strong id="oScore">0</strong>
+        </div>
+
+    </div>
+
+    <div class="instructions">
+        Click a square to place your mark. Get 3 in a row to win! 🎮
+    </div>
+
+</div>
+
+<script>
+
+const boardElement =
+    document.getElementById("board");
+
+const statusElement =
+    document.getElementById("status");
+
+const xScoreElement =
+    document.getElementById("xScore");
+
+const oScoreElement =
+    document.getElementById("oScore");
+
+const drawScoreElement =
+    document.getElementById("drawScore");
+
+
+let board = [];
+
+let currentPlayer = "X";
+
+let gameActive = true;
+
+let xScore = 0;
+let oScore = 0;
+let drawScore = 0;
+
+
+/* =========================
+   WINNING COMBINATIONS
+========================= */
+
+const winningCombinations = [
+
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+
+    [0, 4, 8],
+    [2, 4, 6]
+
+];
+
+
+/* =========================
+   CREATE BOARD
+========================= */
+
+function createBoard() {
+
+    boardElement.innerHTML = "";
+
+    board = [
+        "", "", "",
+        "", "", "",
+        "", "", ""
+    ];
+
+    for (let i = 0; i < 9; i++) {
+
+        const cell =
+            document.createElement("div");
+
+        cell.classList.add("cell");
+
+        cell.dataset.index = i;
+
+        cell.addEventListener(
+            "click",
+            handleCellClick
+        );
+
+        boardElement.appendChild(cell);
+    }
+
+}
+
+
+/* =========================
+   CELL CLICK
+========================= */
+
+function handleCellClick(event) {
+
+    const cell = event.currentTarget;
+
+    const index =
+        Number(cell.dataset.index);
+
+
+    if (
+        board[index] !== "" ||
+        !gameActive
+    ) {
+        return;
+    }
+
+
+    board[index] = currentPlayer;
+
+    cell.textContent = currentPlayer;
+
+    cell.classList.add(
+        currentPlayer === "X"
+            ? "x"
+            : "o"
+    );
+
+
+    checkWinner();
+
+}
+
+
+/* =========================
+   CHECK WINNER
+========================= */
+
+function checkWinner() {
+
+    let winningLine = null;
+
+
+    for (
+        const combination
+        of winningCombinations
+    ) {
+
+        const [a, b, c] =
+            combination;
+
+
+        if (
+            board[a] !== "" &&
+            board[a] === board[b] &&
+            board[a] === board[c]
+        ) {
+
+            winningLine =
+                combination;
+
+            break;
+
+        }
+
+    }
+
+
+    if (winningLine) {
+
+        gameActive = false;
+
+        winningLine.forEach(index => {
+
+            boardElement
+                .children[index]
+                .classList.add("winner");
+
+        });
+
+
+        if (currentPlayer === "X") {
+
+            xScore++;
+
+            xScoreElement.textContent =
+                xScore;
+
+        } else {
+
+            oScore++;
+
+            oScoreElement.textContent =
+                oScore;
+
+        }
+
+
+        statusElement.textContent =
+            `🎉 Player ${currentPlayer} wins!`;
+
+        return;
+    }
+
+
+    /* DRAW */
+
+    if (!board.includes("")) {
+
+        gameActive = false;
+
+        drawScore++;
+
+        drawScoreElement.textContent =
+            drawScore;
+
+        statusElement.textContent =
+            "🤝 It's a draw!";
+
+        return;
+    }
+
+
+    /* NEXT PLAYER */
+
+    currentPlayer =
+        currentPlayer === "X"
+            ? "O"
+            : "X";
+
+
+    statusElement.textContent =
+        `Player ${currentPlayer}'s turn`;
+
+}
+
+
+/* =========================
+   RESTART
+========================= */
+
+function restartGame() {
+
+    currentPlayer = "X";
+
+    gameActive = true;
+
+    statusElement.textContent =
+        "Player X's turn";
+
+    createBoard();
+
+}
+
+
+/* =========================
+   START GAME
+========================= */
+
+createBoard();
+
+</script>
+
+</body>
+</html>
+```
