@@ -1,0 +1,299 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Target Master</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        background: #0b1020;
+        color: white;
+        font-family: Arial, sans-serif;
+        text-align: center;
+    }
+
+    h1 {
+        color: #ffcc66;
+        margin: 20px 0 5px;
+    }
+
+    p {
+        color: #aaa;
+    }
+
+    .info {
+        display: flex;
+        justify-content: center;
+        gap: 35px;
+        margin: 15px;
+        font-size: 18px;
+    }
+
+    canvas {
+        display: block;
+        width: 700px;
+        max-width: 95%;
+        height: auto;
+        margin: 15px auto;
+        background: #162033;
+        border: 3px solid #ffcc66;
+        border-radius: 12px;
+        cursor: crosshair;
+    }
+
+    button {
+        background: #ffcc66;
+        border: none;
+        padding: 12px 22px;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    button:hover {
+        transform: scale(1.05);
+    }
+
+    a {
+        color: #ffcc66;
+        text-decoration: none;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>🎯 Target Master</h1>
+<p>Click the targets as quickly as you can!</p>
+
+<div class="info">
+    <div>Score: <span id="score">0</span></div>
+    <div>Time: <span id="time">30</span>s</div>
+    <div>Best: <span id="best">0</span></div>
+</div>
+
+<canvas id="game" width="700" height="500"></canvas>
+
+<button onclick="restartGame()">🔄 Restart</button>
+
+<p>
+    <a href="../index.html">← Back to GameZone</a>
+</p>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const scoreText = document.getElementById("score");
+const timeText = document.getElementById("time");
+const bestText = document.getElementById("best");
+
+let target;
+let score;
+let timeLeft;
+let gameOver;
+let timer;
+
+let best = Number(localStorage.getItem("targetBest")) || 0;
+bestText.textContent = best;
+
+function randomTarget() {
+    const radius = 25 + Math.random() * 20;
+
+    target = {
+        x: radius + Math.random() * (canvas.width - radius * 2),
+        y: radius + Math.random() * (canvas.height - radius * 2),
+        radius: radius
+    };
+}
+
+function restartGame() {
+    clearInterval(timer);
+
+    score = 0;
+    timeLeft = 30;
+    gameOver = false;
+
+    scoreText.textContent = score;
+    timeText.textContent = timeLeft;
+
+    randomTarget();
+    draw();
+
+    timer = setInterval(() => {
+        timeLeft--;
+        timeText.textContent = timeLeft;
+
+        if (timeLeft <= 0) {
+            endGame();
+        }
+    }, 1000);
+}
+
+canvas.addEventListener("click", event => {
+    if (gameOver) return;
+
+    const rect = canvas.getBoundingClientRect();
+
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    const mouseX = (event.clientX - rect.left) * scaleX;
+    const mouseY = (event.clientY - rect.top) * scaleY;
+
+    const dx = mouseX - target.x;
+    const dy = mouseY - target.y;
+
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance <= target.radius) {
+        score++;
+        scoreText.textContent = score;
+
+        if (score > best) {
+            best = score;
+            localStorage.setItem("targetBest", best);
+            bestText.textContent = best;
+        }
+
+        randomTarget();
+        draw();
+    }
+});
+
+function drawBackground() {
+    ctx.fillStyle = "#162033";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Decorative grid
+    ctx.strokeStyle = "#202d43";
+    ctx.lineWidth = 1;
+
+    for (let x = 0; x < canvas.width; x += 35) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+
+    for (let y = 0; y < canvas.height; y += 35) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+}
+
+function drawTarget() {
+    // Outer circle
+    ctx.beginPath();
+    ctx.arc(
+        target.x,
+        target.y,
+        target.radius,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle = "#ffcc66";
+    ctx.fill();
+
+    // Middle circle
+    ctx.beginPath();
+    ctx.arc(
+        target.x,
+        target.y,
+        target.radius * 0.65,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle = "#162033";
+    ctx.fill();
+
+    // Center
+    ctx.beginPath();
+    ctx.arc(
+        target.x,
+        target.y,
+        target.radius * 0.3,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle = "#ffcc66";
+    ctx.fill();
+}
+
+function drawGameOver() {
+    if (!gameOver) return;
+
+    ctx.fillStyle = "rgba(0,0,0,0.75)";
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    ctx.textAlign = "center";
+
+    ctx.fillStyle = "#ffcc66";
+    ctx.font = "bold 48px Arial";
+
+    ctx.fillText(
+        "TIME'S UP!",
+        canvas.width / 2,
+        220
+    );
+
+    ctx.fillStyle = "white";
+    ctx.font = "24px Arial";
+
+    ctx.fillText(
+        "Score: " + score,
+        canvas.width / 2,
+        265
+    );
+
+    ctx.font = "18px Arial";
+
+    ctx.fillText(
+        "Press Restart to play again",
+        canvas.width / 2,
+        310
+    );
+}
+
+function draw() {
+    drawBackground();
+    drawTarget();
+    drawGameOver();
+}
+
+function endGame() {
+    gameOver = true;
+    clearInterval(timer);
+
+    if (score > best) {
+        best = score;
+        localStorage.setItem("targetBest", best);
+        bestText.textContent = best;
+    }
+
+    draw();
+}
+
+restartGame();
+</script>
+
+</body>
+</html>
+```
