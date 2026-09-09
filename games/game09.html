@@ -1,0 +1,998 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Speed Racer | GameZone</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    background: #080b14;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.game-wrapper {
+    width: 100%;
+    max-width: 650px;
+    text-align: center;
+}
+
+.top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+.back {
+    color: #00e5ff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+h1 {
+    color: #00e5ff;
+}
+
+.stats {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.stat {
+    background: #111827;
+    border: 1px solid #293449;
+    border-radius: 9px;
+    padding: 9px 20px;
+}
+
+.stat span {
+    display: block;
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.stat strong {
+    display: block;
+    font-size: 20px;
+    margin-top: 3px;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    max-width: 500px;
+    height: auto;
+    margin: auto;
+
+    background: #222;
+    border: 3px solid #00e5ff;
+    border-radius: 10px;
+
+    box-shadow: 0 0 30px rgba(0,229,255,.12);
+}
+
+.message {
+    min-height: 25px;
+    margin-top: 15px;
+    color: #cbd5e1;
+}
+
+button {
+    margin-top: 12px;
+    padding: 12px 27px;
+    border: none;
+    border-radius: 8px;
+
+    background: #a855f7;
+    color: white;
+
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #9333ea;
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.controls button {
+    margin: 0;
+    min-width: 105px;
+}
+
+.instructions {
+    color: #64748b;
+    font-size: 13px;
+    margin-top: 16px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="game-wrapper">
+
+    <div class="top">
+        <a href="../index.html" class="back">← GameZone</a>
+        <h1>🏎️ Speed Racer</h1>
+        <div style="width:70px"></div>
+    </div>
+
+    <div class="stats">
+
+        <div class="stat">
+            <span>SCORE</span>
+            <strong id="score">0</strong>
+        </div>
+
+        <div class="stat">
+            <span>BEST</span>
+            <strong id="best">0</strong>
+        </div>
+
+        <div class="stat">
+            <span>SPEED</span>
+            <strong id="speed">1</strong>
+        </div>
+
+    </div>
+
+    <canvas
+        id="gameCanvas"
+        width="500"
+        height="650">
+    </canvas>
+
+    <div class="message" id="message">
+        Press SPACE or START to race!
+    </div>
+
+    <button onclick="restartGame()">🔄 Restart</button>
+
+    <div class="controls">
+
+        <button
+            onmousedown="leftPressed = true"
+            onmouseup="leftPressed = false"
+            onmouseleave="leftPressed = false"
+            ontouchstart="leftPressed = true"
+            ontouchend="leftPressed = false">
+            ◀ LEFT
+        </button>
+
+        <button
+            onclick="startGame()">
+            🏁 START
+        </button>
+
+        <button
+            onmousedown="rightPressed = true"
+            onmouseup="rightPressed = false"
+            onmouseleave="rightPressed = false"
+            ontouchstart="rightPressed = true"
+            ontouchend="rightPressed = false">
+            RIGHT ▶
+        </button>
+
+    </div>
+
+    <div class="instructions">
+        Dodge the traffic and survive as long as possible! 🎮
+    </div>
+
+</div>
+
+<script>
+
+const canvas =
+    document.getElementById("gameCanvas");
+
+const ctx =
+    canvas.getContext("2d");
+
+const scoreElement =
+    document.getElementById("score");
+
+const bestElement =
+    document.getElementById("best");
+
+const speedElement =
+    document.getElementById("speed");
+
+const messageElement =
+    document.getElementById("message");
+
+
+/* =========================
+   GAME VARIABLES
+========================= */
+
+let score = 0;
+
+let best =
+    Number(localStorage.getItem("speedRacerBest")) || 0;
+
+let gameOver = false;
+
+let started = false;
+
+let leftPressed = false;
+let rightPressed = false;
+
+let roadOffset = 0;
+
+let enemyTimer = 0;
+
+let enemies = [];
+
+
+/* =========================
+   ROAD
+========================= */
+
+const road = {
+
+    x: 75,
+
+    width: 350
+
+};
+
+
+/* =========================
+   PLAYER
+========================= */
+
+const player = {
+
+    x:
+        canvas.width / 2 - 22,
+
+    y:
+        canvas.height - 105,
+
+    width: 44,
+
+    height: 75,
+
+    speed: 6
+
+};
+
+
+/* =========================
+   DRAW ROAD
+========================= */
+
+function drawRoad() {
+
+    /* Grass */
+
+    ctx.fillStyle = "#14532d";
+
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    /* Road */
+
+    ctx.fillStyle = "#292929";
+
+    ctx.fillRect(
+        road.x,
+        0,
+        road.width,
+        canvas.height
+    );
+
+
+    /* Road edges */
+
+    ctx.fillStyle = "#f8fafc";
+
+    ctx.fillRect(
+        road.x,
+        0,
+        5,
+        canvas.height
+    );
+
+    ctx.fillRect(
+        road.x + road.width - 5,
+        0,
+        5,
+        canvas.height
+    );
+
+
+    /* Lane markings */
+
+    ctx.fillStyle = "#facc15";
+
+    const laneWidth =
+        road.width / 3;
+
+
+    for (
+        let lane = 1;
+        lane < 3;
+        lane++
+    ) {
+
+        const x =
+            road.x +
+            lane * laneWidth -
+            3;
+
+
+        for (
+            let y = -50 + roadOffset;
+            y < canvas.height;
+            y += 80
+        ) {
+
+            ctx.fillRect(
+                x,
+                y,
+                6,
+                45
+            );
+
+        }
+
+    }
+
+}
+
+
+/* =========================
+   DRAW PLAYER CAR
+========================= */
+
+function drawPlayer() {
+
+    ctx.fillStyle = "#00e5ff";
+
+    ctx.fillRect(
+        player.x,
+        player.y,
+        player.width,
+        player.height
+    );
+
+
+    /* Windows */
+
+    ctx.fillStyle = "#111827";
+
+    ctx.fillRect(
+        player.x + 7,
+        player.y + 10,
+        player.width - 14,
+        22
+    );
+
+
+    /* Front window */
+
+    ctx.fillRect(
+        player.x + 9,
+        player.y + 37,
+        player.width - 18,
+        12
+    );
+
+
+    /* Lights */
+
+    ctx.fillStyle = "#facc15";
+
+    ctx.fillRect(
+        player.x + 5,
+        player.y + 3,
+        9,
+        6
+    );
+
+    ctx.fillRect(
+        player.x + player.width - 14,
+        player.y + 3,
+        9,
+        6
+    );
+
+
+    /* Wheels */
+
+    ctx.fillStyle = "#050505";
+
+    ctx.fillRect(
+        player.x - 5,
+        player.y + 12,
+        6,
+        18
+    );
+
+    ctx.fillRect(
+        player.x + player.width - 1,
+        player.y + 12,
+        6,
+        18
+    );
+
+    ctx.fillRect(
+        player.x - 5,
+        player.y + 48,
+        6,
+        18
+    );
+
+    ctx.fillRect(
+        player.x + player.width - 1,
+        player.y + 48,
+        6,
+        18
+    );
+
+}
+
+
+/* =========================
+   DRAW ENEMY
+========================= */
+
+function drawEnemies() {
+
+    enemies.forEach(enemy => {
+
+        ctx.fillStyle = enemy.color;
+
+        ctx.fillRect(
+            enemy.x,
+            enemy.y,
+            enemy.width,
+            enemy.height
+        );
+
+
+        /* Windows */
+
+        ctx.fillStyle = "#111827";
+
+        ctx.fillRect(
+            enemy.x + 7,
+            enemy.y + 10,
+            enemy.width - 14,
+            22
+        );
+
+
+        ctx.fillRect(
+            enemy.x + 9,
+            enemy.y + 37,
+            enemy.width - 18,
+            12
+        );
+
+
+        /* Wheels */
+
+        ctx.fillStyle = "#050505";
+
+        ctx.fillRect(
+            enemy.x - 5,
+            enemy.y + 12,
+            6,
+            18
+        );
+
+        ctx.fillRect(
+            enemy.x + enemy.width - 1,
+            enemy.y + 12,
+            6,
+            18
+        );
+
+        ctx.fillRect(
+            enemy.x - 5,
+            enemy.y + 48,
+            6,
+            18
+        );
+
+        ctx.fillRect(
+            enemy.x + enemy.width - 1,
+            enemy.y + 48,
+            6,
+            18
+        );
+
+    });
+
+}
+
+
+/* =========================
+   START
+========================= */
+
+function startGame() {
+
+    if (gameOver) {
+        restartGame();
+    }
+
+    started = true;
+
+    messageElement.textContent =
+        "Dodge the traffic! 🏎️";
+
+}
+
+
+/* =========================
+   MOVE PLAYER
+========================= */
+
+function updatePlayer() {
+
+    if (leftPressed) {
+
+        player.x -=
+            player.speed;
+
+    }
+
+    if (rightPressed) {
+
+        player.x +=
+            player.speed;
+
+    }
+
+
+    const minX =
+        road.x + 10;
+
+    const maxX =
+        road.x +
+        road.width -
+        player.width -
+        10;
+
+
+    if (player.x < minX) {
+
+        player.x = minX;
+
+    }
+
+    if (player.x > maxX) {
+
+        player.x = maxX;
+
+    }
+
+}
+
+
+/* =========================
+   CREATE ENEMY
+========================= */
+
+function createEnemy() {
+
+    const laneWidth =
+        road.width / 3;
+
+
+    const lane =
+        Math.floor(
+            Math.random() * 3
+        );
+
+
+    const enemyWidth = 44;
+
+
+    const laneCenter =
+        road.x +
+        lane * laneWidth +
+        laneWidth / 2;
+
+
+    enemies.push({
+
+        x:
+            laneCenter -
+            enemyWidth / 2,
+
+        y: -90,
+
+        width: enemyWidth,
+
+        height: 75,
+
+        speed:
+            3 +
+            Math.random() * 1.5,
+
+        color:
+            [
+                "#ef4444",
+                "#f97316",
+                "#a855f7",
+                "#22c55e",
+                "#facc15"
+            ][
+                Math.floor(
+                    Math.random() * 5
+                )
+            ]
+
+    });
+
+}
+
+
+/* =========================
+   UPDATE ENEMIES
+========================= */
+
+function updateEnemies() {
+
+    enemyTimer++;
+
+    const spawnRate =
+        Math.max(
+            35,
+            75 - score
+        );
+
+
+    if (enemyTimer >= spawnRate) {
+
+        createEnemy();
+
+        enemyTimer = 0;
+
+    }
+
+
+    enemies.forEach(enemy => {
+
+        enemy.y +=
+            enemy.speed +
+            score * 0.015;
+
+    });
+
+
+    enemies =
+        enemies.filter(
+            enemy =>
+                enemy.y <
+                canvas.height + 100
+        );
+
+}
+
+
+/* =========================
+   COLLISION
+========================= */
+
+function checkCollision() {
+
+    enemies.forEach(enemy => {
+
+        const padding = 6;
+
+
+        if (
+
+            player.x + padding <
+                enemy.x + enemy.width &&
+
+            player.x +
+                player.width -
+                padding >
+                enemy.x &&
+
+            player.y + padding <
+                enemy.y + enemy.height &&
+
+            player.y +
+                player.height -
+                padding >
+                enemy.y
+
+        ) {
+
+            endGame();
+
+        }
+
+    });
+
+}
+
+
+/* =========================
+   UPDATE GAME
+========================= */
+
+function updateGame() {
+
+    if (!started || gameOver) {
+        return;
+    }
+
+
+    updatePlayer();
+
+    updateEnemies();
+
+
+    roadOffset +=
+        6 + score * 0.02;
+
+
+    if (roadOffset >= 80) {
+        roadOffset = 0;
+    }
+
+
+    score += 0.02;
+
+    const displayScore =
+        Math.floor(score);
+
+    scoreElement.textContent =
+        displayScore;
+
+
+    const currentSpeed =
+        Math.min(
+            10,
+            1 +
+            Math.floor(
+                displayScore / 10
+            )
+        );
+
+    speedElement.textContent =
+        currentSpeed;
+
+
+    checkCollision();
+
+}
+
+
+/* =========================
+   GAME OVER
+========================= */
+
+function endGame() {
+
+    gameOver = true;
+
+    const finalScore =
+        Math.floor(score);
+
+
+    if (finalScore > best) {
+
+        best = finalScore;
+
+        localStorage.setItem(
+            "speedRacerBest",
+            best
+        );
+
+    }
+
+
+    bestElement.textContent =
+        best;
+
+
+    messageElement.textContent =
+        `💥 Crash! You scored ${finalScore}.`;
+
+}
+
+
+/* =========================
+   DRAW
+========================= */
+
+function draw() {
+
+    drawRoad();
+
+    drawEnemies();
+
+    drawPlayer();
+
+}
+
+
+/* =========================
+   GAME LOOP
+========================= */
+
+function gameLoop() {
+
+    updateGame();
+
+    draw();
+
+    requestAnimationFrame(
+        gameLoop
+    );
+
+}
+
+
+/* =========================
+   KEYBOARD
+========================= */
+
+document.addEventListener(
+    "keydown",
+    function(event) {
+
+        const key =
+            event.key.toLowerCase();
+
+
+        if (
+            key === "arrowleft" ||
+            key === "a"
+        ) {
+
+            leftPressed = true;
+
+        }
+
+
+        if (
+            key === "arrowright" ||
+            key === "d"
+        ) {
+
+            rightPressed = true;
+
+        }
+
+
+        if (
+            event.code === "Space"
+        ) {
+
+            event.preventDefault();
+
+            startGame();
+
+        }
+
+    }
+);
+
+
+document.addEventListener(
+    "keyup",
+    function(event) {
+
+        const key =
+            event.key.toLowerCase();
+
+
+        if (
+            key === "arrowleft" ||
+            key === "a"
+        ) {
+
+            leftPressed = false;
+
+        }
+
+
+        if (
+            key === "arrowright" ||
+            key === "d"
+        ) {
+
+            rightPressed = false;
+
+        }
+
+    }
+);
+
+
+/* =========================
+   RESTART
+========================= */
+
+function restartGame() {
+
+    score = 0;
+
+    gameOver = false;
+
+    started = false;
+
+    leftPressed = false;
+
+    rightPressed = false;
+
+    enemyTimer = 0;
+
+    roadOffset = 0;
+
+    enemies = [];
+
+
+    player.x =
+        canvas.width / 2 -
+        player.width / 2;
+
+
+    scoreElement.textContent =
+        "0";
+
+    bestElement.textContent =
+        best;
+
+    speedElement.textContent =
+        "1";
+
+    messageElement.textContent =
+        "Press SPACE or START to race!";
+
+}
+
+
+/* =========================
+   START
+========================= */
+
+restartGame();
+
+gameLoop();
+
+</script>
+
+</body>
+</html>
+```
