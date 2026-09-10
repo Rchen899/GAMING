@@ -1,0 +1,572 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Penalty Kick - GameZone</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #07130b;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 15px;
+    }
+
+    .game {
+      width: 100%;
+      max-width: 520px;
+      text-align: center;
+    }
+
+    h1 {
+      color: #00ff88;
+      margin: 5px;
+      text-shadow: 0 0 15px #00ff88;
+    }
+
+    p {
+      color: #aaa;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      background: #122018;
+      border: 1px solid #25452f;
+      border-radius: 10px;
+      padding: 12px;
+      margin: 12px 0;
+      font-weight: bold;
+    }
+
+    canvas {
+      width: 100%;
+      max-width: 500px;
+      display: block;
+      margin: auto;
+      border: 3px solid #00ff88;
+      border-radius: 12px;
+      background: #17843d;
+      cursor: crosshair;
+    }
+
+    button {
+      border: none;
+      background: #00ff88;
+      color: #001c0d;
+      font-weight: bold;
+      padding: 12px 22px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 12px 5px 5px;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+    }
+
+    .back {
+      display: inline-block;
+      margin-top: 10px;
+      color: #00ff88;
+      text-decoration: none;
+    }
+
+    .controls {
+      color: #999;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="game">
+
+  <h1>⚽ PENALTY KICK</h1>
+
+  <p>Click a spot in the goal to shoot!</p>
+
+  <div class="stats">
+    <div>Goals: <span id="goals">0</span></div>
+    <div>Shots: <span id="shots">10</span></div>
+    <div>Best: <span id="best">0</span></div>
+  </div>
+
+  <canvas id="game" width="500" height="600"></canvas>
+
+  <button onclick="restartGame()">🔄 Restart</button>
+
+  <div class="controls">
+    Click inside the goal to aim your shot
+  </div>
+
+  <a class="back" href="../index.html">← Back to GameZone</a>
+
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const W = canvas.width;
+const H = canvas.height;
+
+let goals = 0;
+let shots = 10;
+let best = Number(localStorage.getItem("penaltyBest")) || 0;
+
+let ball;
+let keeper;
+let shot;
+let gameOver = false;
+
+document.getElementById("best").textContent = best;
+
+function restartGame() {
+
+  goals = 0;
+  shots = 10;
+  gameOver = false;
+  shot = null;
+
+  ball = {
+    x: W / 2,
+    y: 520,
+    radius: 14
+  };
+
+  keeper = {
+    x: W / 2,
+    y: 190,
+    width: 70,
+    height: 18,
+    targetX: W / 2,
+    speed: 4
+  };
+
+  updateStats();
+}
+
+function updateStats() {
+
+  document.getElementById("goals").textContent = goals;
+  document.getElementById("shots").textContent = shots;
+  document.getElementById("best").textContent = best;
+}
+
+function drawField() {
+
+  // Field
+  ctx.fillStyle = "#17843d";
+  ctx.fillRect(0, 0, W, H);
+
+  // Grass stripes
+  for (let y = 0; y < H; y += 80) {
+    ctx.fillStyle = "rgba(255,255,255,0.035)";
+    ctx.fillRect(0, y, W, 40);
+  }
+
+  // Penalty box
+  ctx.strokeStyle = "rgba(255,255,255,0.8)";
+  ctx.lineWidth = 4;
+
+  ctx.strokeRect(
+    95,
+    125,
+    310,
+    210
+  );
+
+  // Goal
+  ctx.fillStyle = "rgba(240,240,240,0.12)";
+  ctx.fillRect(
+    115,
+    65,
+    270,
+    150
+  );
+
+  // Net lines
+  ctx.strokeStyle = "rgba(255,255,255,0.25)";
+  ctx.lineWidth = 1;
+
+  for (let x = 115; x <= 385; x += 20) {
+    ctx.beginPath();
+    ctx.moveTo(x, 65);
+    ctx.lineTo(x, 215);
+    ctx.stroke();
+  }
+
+  for (let y = 65; y <= 215; y += 20) {
+    ctx.beginPath();
+    ctx.moveTo(115, y);
+    ctx.lineTo(385, y);
+    ctx.stroke();
+  }
+
+  // Goal posts
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 8;
+
+  ctx.beginPath();
+  ctx.moveTo(110, 220);
+  ctx.lineTo(110, 60);
+  ctx.lineTo(390, 60);
+  ctx.lineTo(390, 220);
+  ctx.stroke();
+
+  // Penalty spot
+  ctx.fillStyle = "white";
+  ctx.beginPath();
+  ctx.arc(
+    W / 2,
+    520,
+    4,
+    0,
+    Math.PI * 2
+  );
+  ctx.fill();
+}
+
+function drawKeeper() {
+
+  // Body
+  ctx.fillStyle = "#ffcc00";
+
+  ctx.fillRect(
+    keeper.x - keeper.width / 2,
+    keeper.y,
+    keeper.width,
+    keeper.height
+  );
+
+  // Head
+  ctx.beginPath();
+
+  ctx.arc(
+    keeper.x,
+    keeper.y - 16,
+    13,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fill();
+
+  // Arms
+  ctx.strokeStyle = "#ffcc00";
+  ctx.lineWidth = 9;
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    keeper.x - 28,
+    keeper.y + 8
+  );
+
+  ctx.lineTo(
+    keeper.x - 55,
+    keeper.y + 25
+  );
+
+  ctx.moveTo(
+    keeper.x + 28,
+    keeper.y + 8
+  );
+
+  ctx.lineTo(
+    keeper.x + 55,
+    keeper.y + 25
+  );
+
+  ctx.stroke();
+}
+
+function drawBall() {
+
+  ctx.beginPath();
+
+  ctx.arc(
+    ball.x,
+    ball.y,
+    ball.radius,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fillStyle = "white";
+  ctx.fill();
+
+  ctx.strokeStyle = "#111";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Simple ball pattern
+  ctx.fillStyle = "#222";
+
+  ctx.beginPath();
+  ctx.arc(
+    ball.x,
+    ball.y,
+    4,
+    0,
+    Math.PI * 2
+  );
+  ctx.fill();
+}
+
+function drawAimLine() {
+
+  if (shot || gameOver) return;
+
+  ctx.strokeStyle = "rgba(255,255,255,0.6)";
+  ctx.lineWidth = 2;
+  ctx.setLineDash([8, 8]);
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    ball.x,
+    ball.y
+  );
+
+  ctx.lineTo(
+    W / 2,
+    140
+  );
+
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+}
+
+function getMouse(event) {
+
+  const rect = canvas.getBoundingClientRect();
+
+  return {
+    x: (event.clientX - rect.left) * W / rect.width,
+    y: (event.clientY - rect.top) * H / rect.height
+  };
+}
+
+canvas.addEventListener("click", event => {
+
+  if (gameOver || shot) return;
+
+  const pos = getMouse(event);
+
+  // Only allow shots toward the goal
+  if (
+    pos.y < 250 &&
+    pos.x > 90 &&
+    pos.x < 410
+  ) {
+
+    takeShot(
+      pos.x,
+      pos.y
+    );
+  }
+});
+
+function takeShot(targetX, targetY) {
+
+  shots--;
+
+  shot = {
+    startX: ball.x,
+    startY: ball.y,
+    targetX: targetX,
+    targetY: targetY,
+    progress: 0
+  };
+
+  updateStats();
+}
+
+function updateShot() {
+
+  if (!shot) return;
+
+  shot.progress += 0.045;
+
+  const t = shot.progress;
+
+  ball.x =
+    shot.startX +
+    (shot.targetX - shot.startX) * t;
+
+  ball.y =
+    shot.startY +
+    (shot.targetY - shot.startY) * t;
+
+  // Ball rises and falls slightly
+  const arc =
+    Math.sin(Math.min(t, 1) * Math.PI) * 80;
+
+  ball.y -= arc;
+
+  // Keeper moves toward the shot
+  keeper.targetX = shot.targetX;
+
+  if (keeper.x < keeper.targetX) {
+    keeper.x += keeper.speed;
+  }
+
+  if (keeper.x > keeper.targetX) {
+    keeper.x -= keeper.speed;
+  }
+
+  if (shot.progress >= 1) {
+
+    const keeperDistance =
+      Math.abs(
+        shot.targetX - keeper.x
+      );
+
+    const keeperSave =
+      keeperDistance < 65 &&
+      shot.targetY < 230;
+
+    if (keeperSave) {
+
+      showResult("🧤 SAVED!");
+
+    } else {
+
+      goals++;
+
+      if (goals > best) {
+        best = goals;
+
+        localStorage.setItem(
+          "penaltyBest",
+          best
+        );
+      }
+
+      showResult("⚽ GOAL!");
+    }
+  }
+}
+
+let resultText = "";
+let resultTimer = 0;
+
+function showResult(text) {
+
+  resultText = text;
+  resultTimer = 70;
+
+  shot = null;
+
+  ball.x = W / 2;
+  ball.y = 520;
+
+  keeper.x = W / 2;
+
+  updateStats();
+
+  if (shots <= 0) {
+    gameOver = true;
+  }
+}
+
+function drawResult() {
+
+  if (resultTimer <= 0) return;
+
+  ctx.textAlign = "center";
+
+  ctx.fillStyle = "white";
+  ctx.font = "bold 38px Arial";
+
+  ctx.fillText(
+    resultText,
+    W / 2,
+    380
+  );
+
+  resultTimer--;
+}
+
+function drawGameOver() {
+
+  if (!gameOver) return;
+
+  ctx.fillStyle = "rgba(0,0,0,0.72)";
+  ctx.fillRect(
+    0,
+    0,
+    W,
+    H
+  );
+
+  ctx.textAlign = "center";
+
+  ctx.fillStyle = "#00ff88";
+  ctx.font = "bold 40px Arial";
+
+  ctx.fillText(
+    "FULL TIME!",
+    W / 2,
+    280
+  );
+
+  ctx.fillStyle = "white";
+  ctx.font = "22px Arial";
+
+  ctx.fillText(
+    `Goals: ${goals} / 10`,
+    W / 2,
+    325
+  );
+
+  ctx.font = "16px Arial";
+
+  ctx.fillText(
+    "Press Restart to play again",
+    W / 2,
+    365
+  );
+}
+
+function draw() {
+
+  drawField();
+  drawKeeper();
+  drawBall();
+  drawAimLine();
+  drawResult();
+  drawGameOver();
+}
+
+function loop() {
+
+  updateShot();
+  draw();
+
+  requestAnimationFrame(loop);
+}
+
+restartGame();
+loop();
+</script>
+
+</body>
+</html>
+```
